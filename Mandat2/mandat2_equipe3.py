@@ -39,16 +39,21 @@ def setup_mic():
         print("Recording with : {} \n".format(devices[sd.default.device[0]]['name']))
 
 # memorise une nouvelle commande
-def new_command(fs = 44100, seconds=3, chunk_time = 1000e-3):
+def new_command(fs = 44100, seconds=1, chunk_time = 500e-3):
     chunk = int(chunk_time * fs)
     com = str(input('Nom de la commande associée à la position: '))
     myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels= 1)
     sd.wait()
     n = myrecording.size//2
-    d = {'command' : com, 'S(t)': [myrecording[n:n+chunk].T.tolist()]}
+    s = myrecording[n:n+chunk].T[0]
+    d = {'command' : com, 'S(t)': [s.tolist()]}
     df = pd.DataFrame(data=d)
     with open('memorisedPoints.csv', 'a') as f:
         df.to_csv(f, mode='a', index=False, header=f.tell()==0)
+    t = np.linspace(0, chunk_time, chunk)
+    print(s)
+    plt.plot(t,s)
+    plt.show()
 
 # définit un décorateur permettant de faire une opération sur un autre thread
 def threaded(func):
@@ -79,19 +84,19 @@ def play_note(com, p):
 
 def normalize(sig):
     return sig / np.linalg.norm(sig)
-    
+
 # trouve la touche appuyée (prochaine étape: Neural Net)
 def get_command(sig):
     df = pd.read_csv('memorisedPoints.csv')
     commands , ms = list(df['command']), list(df['S(t)'])
     correlations = [(com, np.max(np.abs(np.correlate(normalize(sig), 
-    normalize(np.array(literal_eval(s))[0]))))) for com, s in zip(commands, ms)]
+    normalize(np.array(literal_eval(s))))))) for com, s in zip(commands, ms)]
     top = max(correlations, key=lambda x: x[1])
     print(top)
     return top[0]
 
 # démarre le piano
-def run_piano(fs=44100, chunk_time = 1000e-3):
+def run_piano(fs=44100, chunk_time = 500e-3):
     n = int(chunk_time * fs)
     stream = sd.InputStream(samplerate=fs, channels=1, blocksize=n)
     stream.start()
@@ -109,6 +114,5 @@ def run_piano(fs=44100, chunk_time = 1000e-3):
 
 if __name__ == "__main__":
     setup_mic()
-    #run_piano()
-    new_command()
-    
+    run_piano()
+    #new_command()
