@@ -13,7 +13,7 @@ def cont_res(x, y):
     peak, _ = signal.find_peaks(y, distance = 1e10)
     width = signal.peak_widths(y, peak, rel_height=0.5)
     resolution = width[0][0]*dx
-    contrast = np.max(y) - cont[1][0]
+    contrast = np.max(y) - width[1][0]
     return [contrast, resolution]
 
 carre = io.loadmat(r'DemiCercle\correl_demi_cercle.mat')
