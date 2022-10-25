@@ -1,9 +1,12 @@
 import numpy as np
 from scipy import signal, io
 import matplotlib.pyplot as plt
-
-file = 'random_shape_data.mat'
-data = io.loadmat(file)
+from matplotlib import cm
+from pylab import *
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.ndimage.filters import gaussian_filter
+import seaborn as sns
+import pandas as pd
 
 def cont_res(x, y):
     try:
@@ -12,13 +15,28 @@ def cont_res(x, y):
         width = signal.peak_widths(y, peak, rel_height=0.5)
         resolution = width[0][0]*dx
         contrast = np.max(y) - width[1][0]
-        return (contrast, resolution)
+        return [contrast, resolution]
     except:
-        return (np.inf, np.inf)
+        return [np.inf, np.inf]
 
-x = data['abs_x'][0]
-y = data['correl_y'][0]
+carre = io.loadmat(r'Croco\croco_correl.mat')
+position = io.loadmat(r'Croco\position.mat')
+x_plot = io.loadmat(r'Croco\x_plot.mat')
 
-cont, res = cont_res(x,y)
-print(cont, res)
+xSource = x_plot['x_plot'][0]
+correl = carre['correl']
+pos = position['position']
 
+
+z =  np.array([cont_res(xSource,y) for y in correl])
+
+cont = z[:, 0]
+res = z[:, 1]
+x = pos[:, 0]
+y = pos[:, 1]
+
+X, Y = np.meshgrid(x, y)
+Z = np.reshape(res, (21, 21))
+
+plt.imshow(Z, extent=[min(x), max(x), max(y), min(y)])
+plt.show()
