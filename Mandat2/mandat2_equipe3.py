@@ -39,19 +39,20 @@ def setup_mic():
         print("Recording with : {} \n".format(devices[sd.default.device[0]]['name']))
 
 # memorise une nouvelle commande
-def new_command(fs = 44100, seconds=1, chunk_time = 500e-3):
-    chunk = int(chunk_time * fs)
+def new_command(fs = 44100, seconds=3, chunk_time = 500e-3):
+    
     com = str(input('Nom de la commande associée à la position: '))
     myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels= 1)
     sd.wait()
-    n = myrecording.size//2
-    s = myrecording[n:n+chunk].T[0]
+    #chunk = int(chunk_time * fs)
+    #n = myrecording.size//2
+    #s = myrecording[n:n+chunk].T[0]
+    s = myrecording.T[0]
     d = {'command' : com, 'S(t)': [s.tolist()]}
     df = pd.DataFrame(data=d)
     with open('memorisedPoints.csv', 'a') as f:
         df.to_csv(f, mode='a', index=False, header=f.tell()==0)
-    t = np.linspace(0, chunk_time, chunk)
-    print(s)
+    t = np.linspace(0, seconds, s.size)
     plt.plot(t,s)
     plt.show()
 
