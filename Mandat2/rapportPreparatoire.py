@@ -9,17 +9,15 @@ import seaborn as sns
 import pandas as pd
 
 def cont_res(x, y):
-    try:
-        dx = abs(x[0] - x[1])
-        peak, _ = signal.find_peaks(y, distance = 1e10)
-        width = signal.peak_widths(y, peak, rel_height=0.5)
-        resolution = width[0][0]*dx
-        contrast = np.max(y) - width[1][0]
-        return [contrast, resolution]
-    except:
-        return [np.inf, np.inf]
+    dx = abs(x[0] - x[1])
+    peak, _ = signal.find_peaks(y, distance = 1e10)
+    width = signal.peak_widths(y, peak, rel_height=0.5)
+    contWidth = signal.peak_widths(y, peak, rel_height=0.75)
+    resolution = width[0][0]*dx
+    contrast = np.max(y) - contWidth[1][0]
+    return [contrast, resolution]
 
-carre = io.loadmat(r'Croco\croco_correl.mat')
+carre = io.loadmat(r'DemiCercle\correl_demi_cercle.mat')
 position = io.loadmat(r'Croco\position.mat')
 x_plot = io.loadmat(r'Croco\x_plot.mat')
 
@@ -35,8 +33,8 @@ res = z[:, 1]
 x = pos[:, 0]
 y = pos[:, 1]
 
-X, Y = np.meshgrid(x, y)
-Z = np.reshape(res, (21, 21))
+X, Y = np.meshgrid(y, x)
+Z = np.reshape(cont, (21, 21))
 
-plt.imshow(Z, extent=[min(x), max(x), max(y), min(y)])
+plt.imshow(Z, extent=[min(x), max(x), min(y), max(y)])
 plt.show()
