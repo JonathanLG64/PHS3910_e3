@@ -39,20 +39,19 @@ def setup_mic():
         print("Recording with : {} \n".format(devices[sd.default.device[0]]['name']))
 
 # memorise une nouvelle commande
-def new_command(fs = 44100, seconds=200e-3, chunk_time = 500e-3):
-    
+def new_command(fs = 44100, seconds=2, chunk_time = 50e-3):
     com = str(input('Nom de la commande associée à la position: '))
     myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels= 1)
     sd.wait()
-    #chunk = int(chunk_time * fs)
-    #n = myrecording.size//2
-    #s = myrecording[n:n+chunk].T[0]
+    chunk = int(chunk_time * fs)
     s = myrecording.T[0]
+    n, _ = signal.find_peaks(s, distance = 1e10)
+    s = s[n[0]:n[0]+chunk]
+    t = np.linspace(0, chunk_time, s.size)
     d = {'command' : com, 'S(t)': [s.tolist()]}
     df = pd.DataFrame(data=d)
     with open('memorisedPoints.csv', 'a') as f:
         df.to_csv(f, mode='a', index=False, header=f.tell()==0)
-    t = np.linspace(0, seconds, s.size)
     plt.plot(t,s)
     plt.show()
 
@@ -68,7 +67,6 @@ def threaded(func):
     return wrapper
 
 # Joue la note associée au string
-@threaded
 def play_note(com, p):
     filename=f'Wav-Notes\{com}.wav'
     wf = wave.open(filename)
@@ -90,21 +88,26 @@ def normalize(sig):
 def get_command(sig):
     df = pd.read_csv('memorisedPoints.csv')
     commands , ms = list(df['command']), list(df['S(t)'])
-    correlations = [(com, np.max(np.abs(np.correlate(normalize(sig), 
-    normalize(np.array(literal_eval(s))))))) for com, s in zip(commands, ms)]
+    correlations = [(com, np.max(np.correlate(normalize(sig), 
+    normalize(np.array(literal_eval(s))), mode = 'same'))) for com, s in zip(commands, ms)]
     top = max(correlations, key=lambda x: x[1])
     print(top)
+    if top[1] < 0.8:
+        return 'none'
     return top[0]
 
 # démarre le piano
-def run_piano(fs=44100, chunk_time = 200e-3):
-    n = int(chunk_time * fs)
-    stream = sd.InputStream(samplerate=fs, channels=1, blocksize=n)
+def run_piano(fs=44100, seconds = 0.5, chunk_time = 50e-3):
+    N = int(seconds * fs)
+    stream = sd.InputStream(samplerate=fs, channels=1, blocksize=N)
     stream.start()
     audio_streamer = pyaudio.PyAudio()
+    chunk = int(chunk_time * fs)
     while True:
-        reading = stream.read(frames=n)[0].T[0] #lecture en temps réel
-        command = get_command(reading)
+        reading = stream.read(frames=N)[0].T[0] #lecture en temps réel
+        n, _ = signal.find_peaks(reading, distance = 1e10)
+        s = reading[n[0]:n[0]+chunk]
+        command = get_command(s)
         if command == 'stop':
             stream.close()
             break
