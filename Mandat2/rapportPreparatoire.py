@@ -16,13 +16,14 @@ def cont_res(x, y):
     right = int(contwidth[3][0])
     # calcule la moyenne de ces points comme baseline
     base = (np.mean(y[x < x[left]]) + np.mean(y[x > x[right]]))/2
-    contrast = np.max(y) - base
+    contrast = 1 / base
+    print(max(y))
     # considère que le contraste est nulle si une mesure invalide est faite
     if np.isnan(contrast):
         contrast = 0
     return [contrast, resolution]
 
-carre = io.loadmat(r'Croco\croco_correl.mat')
+carre = io.loadmat(r'DemiCercle\correl_demi_cercle.mat')
 position = io.loadmat(r'DemiCercle\position.mat')
 x_plot = io.loadmat(r'DemiCercle\x_plot.mat')
 
