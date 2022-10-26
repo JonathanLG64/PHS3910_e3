@@ -17,6 +17,7 @@ def cont_res(x, y):
     # calcule la moyenne de ces points comme baseline
     base = (np.mean(y[x < x[left]]) + np.mean(y[x > x[right]]))/2
     contrast = np.max(y) - base
+    # considère que le contraste est nulle si une mesure invalide est faite
     if np.isnan(contrast):
         contrast = 0
     return [contrast, resolution]
@@ -43,6 +44,7 @@ X, Y = np.meshgrid(x, y)
 Zres = np.reshape(res, (21, 21)).T*1e3
 Zcont = np.reshape(cont, (21, 21)).T
 # affichage des données dans des heatmaps
+
 plt.imshow(Zres, extent=[min(x), max(x), min(y), max(y)])
 plt.xlabel('x - position [mm]')
 plt.ylabel('y - position [mm]')

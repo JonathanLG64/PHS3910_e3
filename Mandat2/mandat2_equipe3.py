@@ -39,7 +39,7 @@ def setup_mic():
         print("Recording with : {} \n".format(devices[sd.default.device[0]]['name']))
 
 # memorise une nouvelle commande
-def new_command(fs = 44100, seconds=3, chunk_time = 500e-3):
+def new_command(fs = 44100, seconds=200e-3, chunk_time = 500e-3):
     
     com = str(input('Nom de la commande associée à la position: '))
     myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels= 1)
@@ -97,7 +97,7 @@ def get_command(sig):
     return top[0]
 
 # démarre le piano
-def run_piano(fs=44100, chunk_time = 500e-3):
+def run_piano(fs=44100, chunk_time = 200e-3):
     n = int(chunk_time * fs)
     stream = sd.InputStream(samplerate=fs, channels=1, blocksize=n)
     stream.start()
