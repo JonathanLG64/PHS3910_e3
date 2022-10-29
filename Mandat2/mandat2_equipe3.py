@@ -123,5 +123,5 @@ def run_piano(fs=44.1e3, seconds = 0.1, chunk_time = 50e-3):
 
 if __name__ == "__main__":
     setup_mic()
-    run_piano()
-    #new_command()
+    #run_piano()
+    new_command()
