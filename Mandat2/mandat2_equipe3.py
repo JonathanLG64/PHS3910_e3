@@ -39,7 +39,7 @@ def setup_mic():
         print("Recording with : {} \n".format(devices[sd.default.device[0]]['name']))
 
 def compress(arr):
-    return (255*(arr - np.min(arr))/np.ptp(arr)).astype(np.uint8)
+    return ((2**16 - 1)*(arr - np.min(arr))/np.ptp(arr)).astype(np.uint8)
 
 # memorise une nouvelle commande
 def new_command(file = 'memorisedPoints.csv', fs = 44.1e3, seconds=2, chunk_time = 50e-3):
@@ -48,7 +48,7 @@ def new_command(file = 'memorisedPoints.csv', fs = 44.1e3, seconds=2, chunk_time
     sd.wait() 
     chunk = int(chunk_time * fs)
     peak = np.argmax(recording)
-    recording = recording[peak:peak+chunk].astype(np.float16)
+    recording = compress(recording[peak:peak+chunk])
     try:
         df = pd.read_csv(file)
         df[com] = recording
@@ -111,7 +111,7 @@ def run_piano(fs=44.1e3, seconds = 0.1, chunk_time = 50e-3):
     while True:
         reading = stream.read(frames=N)[0].T[0] #lecture en temps réel
         peak = np.argmax(reading)
-        s = reading[peak:peak+chunk].astype(np.float16)
+        s = compress(reading[peak:peak+chunk])
         command = get_command(s)
         if command == 'stop':
             stream.close()
