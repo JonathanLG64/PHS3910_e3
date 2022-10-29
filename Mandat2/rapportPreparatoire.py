@@ -31,7 +31,6 @@ xSource = x_plot['x_plot'][0]
 correl = carre['correl']
 pos = position['position']
 
-
 z =  np.array([cont_res(xSource,y) for y in correl])
 
 cont = z[:, 0]
