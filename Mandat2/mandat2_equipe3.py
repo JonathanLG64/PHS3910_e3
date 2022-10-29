@@ -11,6 +11,7 @@ import threading
 import functools
 import pandas as pd
 from ast import literal_eval
+
 #from sklearn.model_selection import train_test_split
 #from keras.layers import Dense, Flatten, Conv2D, MaxPool2D, Dropout
 #from keras.models import Sequential
@@ -23,7 +24,6 @@ from ast import literal_eval
 def setup_mic():
     default = True #Si cette option est utilisée, le micro/speaker par défaut est utilisé
     devices = sd.query_devices()
-
     if not default:
         InputStr = "Choisir le # correspondant au micro parmis la liste: \n"
         OutputStr = "Choisir le # correspondant au speaker parmis la liste: \n"
@@ -38,21 +38,25 @@ def setup_mic():
         sd.default.device = [int(DeviceIn), int(DeviceOut)]
         print("Recording with : {} \n".format(devices[sd.default.device[0]]['name']))
 
+def compress(arr):
+    return (255*(arr - np.min(arr))/np.ptp(arr)).astype(np.uint8)
+
 # memorise une nouvelle commande
-def new_command(fs = 44100, seconds=2, chunk_time = 50e-3):
+def new_command(file = 'memorisedPoints.csv', fs = 44.1e3, seconds=2, chunk_time = 50e-3):
     com = str(input('Nom de la commande associée à la position: '))
-    myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels= 1)
-    sd.wait()
+    recording = sd.rec(int(seconds * fs), samplerate=fs, channels= 1).T[0]
+    sd.wait() 
     chunk = int(chunk_time * fs)
-    s = myrecording.T[0]
-    n, _ = signal.find_peaks(s, distance = 1e10)
-    s = s[n[0]:n[0]+chunk]
-    t = np.linspace(0, chunk_time, s.size)
-    d = {'command' : com, 'S(t)': [s.tolist()]}
-    df = pd.DataFrame(data=d)
-    with open('memorisedPoints.csv', 'a') as f:
-        df.to_csv(f, mode='a', index=False, header=f.tell()==0)
-    plt.plot(t,s)
+    peak = np.argmax(recording)
+    recording = recording[peak:peak+chunk].astype(np.float16)
+    try:
+        df = pd.read_csv(file)
+        df[com] = recording
+    except:
+        df = pd.DataFrame({com: recording})
+    df.to_csv(file, mode = 'w', header = com, index=False)
+    t = np.linspace(0, chunk_time, chunk)
+    plt.plot(t, recording)
     plt.show()
 
 # définit un décorateur permettant de faire une opération sur un autre thread
@@ -67,6 +71,7 @@ def threaded(func):
     return wrapper
 
 # Joue la note associée au string
+@threaded
 def play_note(com, p):
     filename=f'Wav-Notes\{com}.wav'
     wf = wave.open(filename)
@@ -85,19 +90,19 @@ def normalize(sig):
     return sig / np.linalg.norm(sig)
 
 # trouve la touche appuyée (prochaine étape: Neural Net)
-def get_command(sig):
-    df = pd.read_csv('memorisedPoints.csv')
-    commands , ms = list(df['command']), list(df['S(t)'])
-    correlations = [(com, np.max(np.correlate(normalize(sig), 
-    normalize(np.array(literal_eval(s))), mode = 'same'))) for com, s in zip(commands, ms)]
-    top = max(correlations, key=lambda x: x[1])
-    print(top)
-    if top[1] < 0.8:
+def get_command(sig, file = 'memorisedPoints.csv'):
+    df = pd.read_csv(file)
+    corr = [np.max(np.correlate(normalize(sig), normalize(df[col]), mode='same')) for col in df]
+    imax = np.argmax(corr)
+    prob = corr[imax]
+    command = df.keys()[imax]
+    print((command, prob))
+    if prob < 0.8:
         return 'none'
-    return top[0]
+    return command
 
 # démarre le piano
-def run_piano(fs=44100, seconds = 0.5, chunk_time = 50e-3):
+def run_piano(fs=44.1e3, seconds = 0.1, chunk_time = 50e-3):
     N = int(seconds * fs)
     stream = sd.InputStream(samplerate=fs, channels=1, blocksize=N)
     stream.start()
@@ -105,8 +110,8 @@ def run_piano(fs=44100, seconds = 0.5, chunk_time = 50e-3):
     chunk = int(chunk_time * fs)
     while True:
         reading = stream.read(frames=N)[0].T[0] #lecture en temps réel
-        n, _ = signal.find_peaks(reading, distance = 1e10)
-        s = reading[n[0]:n[0]+chunk]
+        peak = np.argmax(reading)
+        s = reading[peak:peak+chunk].astype(np.float16)
         command = get_command(s)
         if command == 'stop':
             stream.close()
