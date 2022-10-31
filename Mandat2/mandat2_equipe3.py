@@ -10,15 +10,6 @@ import wave, pyaudio
 import threading
 import functools
 import pandas as pd
-from ast import literal_eval
-
-#from sklearn.model_selection import train_test_split
-#from keras.layers import Dense, Flatten, Conv2D, MaxPool2D, Dropout
-#from keras.models import Sequential
-#from keras.optimizers import SGD, Adam
-#from keras.callbacks import ReduceLROnPlateau, EarlyStopping
-#from keras.utils import to_categorical
-#from sklearn.utils import shuffle
 
 # sélectionne le bon microphone
 def setup_mic():
@@ -38,17 +29,20 @@ def setup_mic():
         sd.default.device = [int(DeviceIn), int(DeviceOut)]
         print("Recording with : {} \n".format(devices[sd.default.device[0]]['name']))
 
-def compress(arr):
-    return ((2**8 - 1)*(arr - np.min(arr))/np.ptp(arr)).astype(np.uint8)
+def compress(arr, n):
+    pass
+
+def frequency_content(arr, fc):
+    pass
 
 # memorise une nouvelle commande
-def new_command(file = 'memorisedPoints.csv', fs = 44.1e3, seconds=2, chunk_time = 50e-3):
+def new_command(file = 'memorisedPoints.csv', fs = 20e3, seconds=2, chunk_time = 50e-3):
     com = str(input('Nom de la commande associée à la position: '))
     recording = sd.rec(int(seconds * fs), samplerate=fs, channels= 1).T[0]
     sd.wait() 
     chunk = int(chunk_time * fs)
     peak = np.argmax(recording)
-    recording = recording[peak:peak+chunk].astype(np.float16)
+    recording = recording[peak+chunk:peak+2*chunk].astype(np.float16)
     try:
         df = pd.read_csv(file)
         df[com] = recording
@@ -89,20 +83,49 @@ def play_note(com, p):
 def normalize(sig):
     return sig / np.linalg.norm(sig)
 
+def cont_res(x, y):
+    dx = abs(x[0] - x[1])
+    # Trouve le plus grand pic dans le signal
+    peak, _ = signal.find_peaks(y, distance=1e3)
+    # mesure la largeur à mi-hauteur pour calculer la résolution
+    width = signal.peak_widths(y, peak, rel_height=0.5)[0][0]
+    resolution = width*dx
+    # Fait la moyenne des points qui sont considérés à l'extérieur du pic
+    contwidth = signal.peak_widths(y, peak, rel_height=0.8)
+    left = int(contwidth[2][0])
+    right = int(contwidth[3][0])
+    # calcule la moyenne de ces points comme baseline
+    base = (np.mean(y[x < x[left]]) + np.mean(y[x > x[right]]))/2
+    contrast = 1 / base
+    print(max(y))
+    # considère que le contraste est nulle si une mesure invalide est faite
+    if np.isnan(contrast):
+        contrast = 0
+    return (contrast, resolution)
+
+@threaded
+def correlateTh(sig1, sig2):
+    return np.correlate(sig1, normalize(sig2))
+
 # trouve la touche appuyée (prochaine étape: Neural Net)
 def get_command(sig, file = 'memorisedPoints.csv'):
     df = pd.read_csv(file)
-    corr = [np.max(np.correlate(normalize(sig), normalize(df[col]), mode='same')) for col in df]
+    corr = np.array([np.max(correlateTh(normalize(sig), normalize(df[col]), mode='same')) for col in df])
+    #x = np.array([0, ])
+    #contrast, resolution = cont_res(x, corr)
+
     imax = np.argmax(corr)
     prob = corr[imax]
+    
     command = df.keys()[imax]
     print((command, prob))
-    if prob < 0.8:
+    #print(f'contrast: {contrast}, resolution: {resolution}')
+    if prob < 0.5:
         return 'none'
     return command
 
 # démarre le piano
-def run_piano(fs=44.1e3, seconds = 0.1, chunk_time = 50e-3):
+def run_piano(fs=20e3, seconds = 0.3, chunk_time = 50e-3):
     N = int(seconds * fs)
     stream = sd.InputStream(samplerate=fs, channels=1, blocksize=N)
     stream.start()
@@ -111,7 +134,7 @@ def run_piano(fs=44.1e3, seconds = 0.1, chunk_time = 50e-3):
     while True:
         reading = stream.read(frames=N)[0].T[0] #lecture en temps réel
         peak = np.argmax(reading)
-        s = reading[peak:peak+chunk].astype(np.float16)
+        s = reading[peak+chunk:peak+2*chunk].astype(np.float16)
         command = get_command(s)
         if command == 'stop':
             stream.close()
