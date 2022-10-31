@@ -36,13 +36,13 @@ def frequency_content(arr, fc):
     pass
 
 # memorise une nouvelle commande
-def new_command(file = 'memorisedPoints.csv', fs = 20e3, seconds=2, chunk_time = 50e-3):
+def new_command(file = 'memorisedPoints.csv', fs = 44.1e3, seconds=2, chunk_time = 50e-3):
     com = str(input('Nom de la commande associée à la position: '))
     recording = sd.rec(int(seconds * fs), samplerate=fs, channels= 1).T[0]
     sd.wait() 
     chunk = int(chunk_time * fs)
     peak = np.argmax(recording)
-    recording = recording[peak+chunk:peak+2*chunk].astype(np.float16)
+    recording = recording[peak:peak+chunk].astype(np.float16)
     try:
         df = pd.read_csv(file)
         df[com] = recording
@@ -67,7 +67,8 @@ def threaded(func):
 # Joue la note associée au string
 @threaded
 def play_note(com, p):
-    filename=f'Wav-Notes\{com}.wav'
+    file = com.split('_')
+    filename=f'Wav-Notes\{file[0]}.wav'
     wf = wave.open(filename)
     chunk = 1024
     stream = p.open(format =
@@ -105,27 +106,27 @@ def cont_res(x, y):
 
 @threaded
 def correlateTh(sig1, sig2):
-    return np.correlate(sig1, normalize(sig2))
+    return np.correlate(sig1, normalize(sig2), mode='same')
 
 # trouve la touche appuyée (prochaine étape: Neural Net)
 def get_command(sig, file = 'memorisedPoints.csv'):
     df = pd.read_csv(file)
-    corr = np.array([np.max(correlateTh(normalize(sig), normalize(df[col]), mode='same')) for col in df])
+    corr = np.array([np.max(np.correlate(normalize(sig), normalize(df[col]), mode='same')) for col in df])
     #x = np.array([0, ])
     #contrast, resolution = cont_res(x, corr)
-
     imax = np.argmax(corr)
     prob = corr[imax]
-    
     command = df.keys()[imax]
     print((command, prob))
     #print(f'contrast: {contrast}, resolution: {resolution}')
-    if prob < 0.5:
+    if prob < 0.8:
         return 'none'
+    #plt.plot(corr)
+    #plt.show()
     return command
 
 # démarre le piano
-def run_piano(fs=20e3, seconds = 0.3, chunk_time = 50e-3):
+def run_piano(fs=44.1e3, seconds = 1, chunk_time = 50-3, file = 'memorisedPoints'):
     N = int(seconds * fs)
     stream = sd.InputStream(samplerate=fs, channels=1, blocksize=N)
     stream.start()
@@ -134,8 +135,8 @@ def run_piano(fs=20e3, seconds = 0.3, chunk_time = 50e-3):
     while True:
         reading = stream.read(frames=N)[0].T[0] #lecture en temps réel
         peak = np.argmax(reading)
-        s = reading[peak+chunk:peak+2*chunk].astype(np.float16)
-        command = get_command(s)
+        s = reading[peak:peak+chunk].astype(np.float16)
+        command = get_command(s, file=file)
         if command == 'stop':
             stream.close()
             break
@@ -145,6 +146,10 @@ def run_piano(fs=20e3, seconds = 0.3, chunk_time = 50e-3):
             play_note(command, audio_streamer)
 
 if __name__ == "__main__":
+    ct = 50e-3
+    fs = 20e3
+    f = 'table_references.csv'
     setup_mic()
-    run_piano()
-    #new_command()
+    #run_piano(chunk_time=ct, fs=fs, file=f)
+    while True:
+        new_command(chunk_time=ct, fs=fs, file=f)
