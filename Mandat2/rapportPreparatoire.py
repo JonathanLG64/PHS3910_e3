@@ -16,14 +16,13 @@ def cont_res(x, y):
     right = int(contwidth[3][0])
     # calcule la moyenne de ces points comme baseline
     base = (np.mean(y[x < x[left]]) + np.mean(y[x > x[right]]))/2
-    contrast = 1 / base
-    print(max(y))
+    contrast = 1 - base
     # considère que le contraste est nulle si une mesure invalide est faite
     if np.isnan(contrast):
         contrast = 0
     return [contrast, resolution]
 
-carre = io.loadmat(r'DemiCercle\correl_demi_cercle.mat')
+carre = io.loadmat(r'Carree\carre.mat')
 position = io.loadmat(r'DemiCercle\position.mat')
 x_plot = io.loadmat(r'DemiCercle\x_plot.mat')
 
@@ -35,14 +34,32 @@ z =  np.array([cont_res(xSource,y) for y in correl])
 
 cont = z[:, 0]
 res = z[:, 1]
-x = pos[:, 0]*1e3
-y = pos[:, 1]*1e3
+x = pos[:, 0]*1e3 - 100
+y = pos[:, 1]*1e3 - 100
 
-x = x -100
-y = y - 100
+x = np.linspace(min(x), max(x), 21)
+y = np.linspace(min(y), max(y), 21)
+
 X, Y = np.meshgrid(x, y)
+
+
 Zres = np.reshape(res, (21, 21)).T*1e3
 Zcont = np.reshape(cont, (21, 21)).T
+#exclu les régions à l'extérieur des formes
+#condition = X**2 + (Y+100)**2 > 100**2
+#condition1 = (X-100)**2 + (Y+100)**2 < 75**2
+#Zres[condition1] = np.inf
+#Zres[2, 0:3] = np.inf
+#Zres[6:11, 0:7] = np.inf
+#Zres[7:9, 12:14] = np.inf
+#Zres[13:16,4:7] = np.inf
+
+#Zcont[condition1] = np.inf
+#Zcont[2, 0:3] = np.inf
+#Zcont[6:11, 0:7] = np.inf
+#Zcont[7:9, 12:14] = np.inf
+#Zcont[13:16,4:7] = np.inf
+#Zcont[condition] = np.inf
 # affichage des données dans des heatmaps
 
 plt.imshow(Zres, extent=[min(x), max(x), min(y), max(y)])
