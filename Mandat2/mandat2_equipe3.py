@@ -148,8 +148,8 @@ def run_piano(fs=44.1e3, seconds = 1, chunk_time = 50-3, file = 'memorisedPoints
 if __name__ == "__main__":
     ct = 50e-3
     fs = 20e3
-    f = 'table_references.csv'
+    f = 'memorisedPoints.csv'
     setup_mic()
-    #run_piano(chunk_time=ct, fs=fs, file=f)
-    while True:
-        new_command(chunk_time=ct, fs=fs, file=f)
+    run_piano(chunk_time=ct, fs=fs, file=f)
+    #while True:
+    #    new_command(chunk_time=ct, fs=fs, file=f)
