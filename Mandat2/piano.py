@@ -78,7 +78,6 @@ def play_note(com, p):
 def normalize(sig):
     return sig / np.linalg.norm(sig)
 
-
 @threaded
 def correlateTh(sig1, sig2):
     return np.correlate(sig1, normalize(sig2), mode='same')
