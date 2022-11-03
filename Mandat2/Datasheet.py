@@ -35,15 +35,14 @@ def cont_res_plotter(xvals, s, r, xlabel = 'frequence de coupure [Hz]'):
     plt.plot(xvals, cr_m[:,0], '-o')
     plt.fill_between(xvals, cr_m[:,0]-cr_std[:,0], cr_m[:,0]+cr_std[:,0], alpha=0.5, color='lightblue')
     plt.xlabel(xlabel)
-    plt.ylabel('contrast')
+    plt.ylabel('contraste')
     plt.show()
 
     plt.plot(xvals, cr_m[:,1], '-o')
     plt.fill_between(xvals, cr_m[:,1]-cr_std[:,1], cr_m[:,1]+cr_std[:,1], alpha=0.5, color='lightblue')
     plt.xlabel(xlabel)
-    plt.ylabel('resolution [mm]')
+    plt.ylabel('résolution [mm]')
     plt.show()
-
 
 def compress(arr, n):
     pass
@@ -55,5 +54,5 @@ if __name__ == '__main__':
     ref = np.reshape(pd.read_csv('table_references.csv').to_numpy().T, (1,3,14,1000))
     notes =pd.read_csv('test_table.csv')
     source = np.reshape(notes['e3_3'].to_numpy().T, (1,1000))
-    xvals = [1]
+    xvals = [1, 2]
     cont_res_plotter(xvals, source, ref)
