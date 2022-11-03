@@ -51,8 +51,9 @@ def frequency_content(arr, fc):
     pass
 
 if __name__ == '__main__':
-    ref = np.reshape(pd.read_csv('table_references.csv').to_numpy().T, (1,3,14,1000))
+    ref = np.reshape(pd.read_csv('table_references.csv').to_numpy().T, (3,14,1000))
     notes =pd.read_csv('test_table.csv')
-    source = np.reshape(notes['e3_3'].to_numpy().T, (1,1000))
-    xvals = [1, 2]
-    cont_res_plotter(xvals, source, ref)
+    source = np.reshape(notes['g3_3'].to_numpy().T, (1000))
+    
+    #xvals = [1]
+    #cont_res_plotter(xvals, source, ref, xlabel = 'frequence de coupure [Hz]')
