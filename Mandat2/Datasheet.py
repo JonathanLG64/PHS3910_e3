@@ -36,5 +36,5 @@ def frequency_content(arr, fc):
 if __name__ == '__main__':
     ref = pd.read_csv('table_references.csv')
     notes =pd.read_csv('pianoPoints.csv')
-    source = notes[['g3_1', 'g3_2', 'g3_3']]
+    source = notes[['g3_1', 'g3_2']]
     print(source)
