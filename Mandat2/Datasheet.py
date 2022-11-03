@@ -30,6 +30,7 @@ def normalize(sig):
 #shape of r array: (npoints, 3, 14, 1000), shape of s array: (npoints, 1000)
 def cont_res_plotter(x, s, r):
     correlations =  np.array([[[[np.max(np.correlate(normalize(source), normalize(ref), mode='same')) for ref in mes] for mes in pos] for pos in r] for source in s])
+    print(correlations.shape)
     for i in range(3):
         plt.plot(x, correlations[0,0,i,:])
     plt.xlabel('x [m]')
@@ -45,9 +46,9 @@ def frequency_content(arr, fc):
 
 if __name__ == '__main__':
     ref = np.reshape(pd.read_csv('table_references.csv').to_numpy().T, (1,3,14,1000))
-    notes =pd.read_csv('table_references.csv')
-    source = np.reshape(notes['7_3'].to_numpy().T, (1,1000))
+    notes =pd.read_csv('test_table.csv')
+    source = np.reshape(notes['e3_3'].to_numpy().T, (1,1000))
     x = np.linspace(0,ref.shape[2]*2e-2, 14)
-    print(ref)
+    print(ref[0])
     print(x)
     cont_res_plotter(x, source, ref)
