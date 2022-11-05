@@ -14,7 +14,7 @@ def findClosest(arr, target):
         return arr[0]
     if (target >= arr[n - 1]):
         return arr[n - 1]
- 
+
     # Doing binary search
     i = 0; j = n; mid = 0
     while (i < j):
@@ -82,17 +82,16 @@ def normalize(sig):
 
 def maxrow(arr):
     indices = np.argmax(arr, axis = 0)
-    return arr[indices[0]]
+    return np.array(arr[indices[0]])
 
 #shape of r array: (npoints, 3, 14, 1000), shape of s array: (npoints, 3, 1000)
 def cont_res_plotter(xvals, s, r, xlabel = 'frequence de coupure [Hz]'):
     x = np.linspace(0,r.shape[2]*2e-2, 14)
     # converti toutes les données en contrastes et résoluitions
-    cr =  np.array([[maxrow([cont_res(x,np.array([np.max(np.correlate(normalize(so), normalize(ref), mode='same')) for ref in mes])) for mes in pos]) for so in s[n]]for n , pos in enumerate(r)])
-    print(cr)
-    #print(cr.shape)
-    cr[:,:,1] = cr[:,:,1]*1e3 # converti les m en mm pour la résolution
-
+    cr =  np.array([[cont_res(x, maxrow([[np.max(np.correlate(normalize(so), normalize(ref), mode='same')) for ref in mes] for mes in pos])) for so in s[n]] for n , pos in enumerate(r)])
+    # converti les m en mm pour la résolution
+    cr[:,:,1] = cr[:,:,1]*1e3
+    # calcule la moyenne et l'écart-type
     cr_m, cr_std = np.mean(cr, axis=1), np.std(cr, axis=1)
 
     plt.plot(xvals, cr_m[:,0], '-o')
@@ -136,12 +135,12 @@ def frequency_content(arr, fc):
     pass
 
 if __name__ == '__main__':
-    ref = np.reshape(pd.read_csv('table_references.csv').to_numpy().T, (1,3,14,1000))
-    notes =pd.read_csv('table_references.csv')
-    source = np.reshape(notes[['5_1', '5_2', '5_3']].to_numpy().T, (1,3,1000))
+    ref = np.reshape(pd.read_csv('table_tests.csv').to_numpy().T, (1,3,14,1000))
+    notes =pd.read_csv('table_tests.csv')
+    source = np.reshape(notes[['4_1', '4_2', '4_3']].to_numpy().T, (1,3,1000))
     ref = np.reshape(pd.read_csv('old_table_references.csv').to_numpy().T, (3,14,1000))
     notes =pd.read_csv('old_test_table.csv')
     source = np.reshape(notes['g3_3'].to_numpy().T, (1000))
     
-    #xvals = [1]
-    #cont_res_plotter(xvals, source, ref, xlabel = 'frequence de coupure [Hz]')
+    xvals = [1]
+    cont_res_plotter(xvals, source, ref, xlabel = 'frequence de coupure [Hz]')
