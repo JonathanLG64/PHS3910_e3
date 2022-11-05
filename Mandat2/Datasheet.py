@@ -3,6 +3,61 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# ================== Find element closest to given target using binary search =====================
+
+def findClosest(arr, target):
+    # Returns element closest to target in arr[]
+    
+    n = len(arr)
+    # Corner cases
+    if (target <= arr[0]):
+        return arr[0]
+    if (target >= arr[n - 1]):
+        return arr[n - 1]
+ 
+    # Doing binary search
+    i = 0; j = n; mid = 0
+    while (i < j):
+        mid = (i + j) // 2
+ 
+        if (arr[mid] == target):
+            return arr[mid]
+ 
+        # If target is less than array
+        # element, then search in left
+        if (target < arr[mid]) :
+ 
+            # If target is greater than previous
+            # to mid, return closest of two
+            if (mid > 0 and target > arr[mid - 1]):
+                return getClosest(arr[mid - 1], arr[mid], target)
+ 
+            # Repeat for left half
+            j = mid
+         
+        # If target is greater than mid
+        else :
+            if (mid < n - 1 and target < arr[mid + 1]):
+                return getClosest(arr[mid], arr[mid + 1], target)
+                 
+            # update i
+            i = mid + 1
+         
+    # Only single element left after search
+    return arr[mid]
+
+def getClosest(val1, val2, target):
+    # Find closest value to target between two values by taking the difference between the target and both values. 
+    # It assumes that val2 is greater than val1 and target lies between these two.
+ 
+    if (target - val1 >= val2 - target):
+        return val2
+    else:
+        return val1
+
+
+# ========================== Graphique résolution et contraste ==========================
+
 def cont_res(x, y):
     dx = abs(x[0] - x[1])
     # Trouve le plus grand pic dans le signal
@@ -52,13 +107,30 @@ def cont_res_plotter(xvals, s, r, xlabel = 'frequence de coupure [Hz]'):
     plt.ylabel('résolution [mm]')
     plt.show()
 
+# ========================== Caractérisation nombre de bits ==========================
+
 # Fonction qui converti les chiffres d'une liste en n bits
 def compress(arr, n):
     # Inputs : arr = numpy array, n = nombre de bits
     # Output : numpy array avec chiffres encodés sur n bits
 
-    x = np.linspace(0, (2**n-1), 2**n)
-    pass
+    #numbers = np.linspace(0, (2**n-1), 2**n)
+    numbers = np.linspace(min(np.amin(arr)), max(np.amax(arr)), 2**n)
+    
+    new_array = pd.DataFrame().reindex_like(arr)
+    
+    # Itterate over all columns of array
+    for column in arr:
+        values = arr[column]
+        
+        # Itterate over all values of column and find closest value in x array
+        for i in range(len(values)):
+            new_array[column][i] = findClosest(numbers, values[i])
+            
+    return new_array.add_suffix(f"_{n}bits")
+
+
+# ========================== Caractérisation contenu fréquentil ==========================
 
 def frequency_content(arr, fc):
     pass
