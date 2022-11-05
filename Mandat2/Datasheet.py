@@ -46,15 +46,27 @@ def cont_res_plotter(xvals, s, r, xlabel = 'frequence de coupure [Hz]'):
     plt.ylabel('résolution [mm]')
     plt.show()
 
+# Fonction qui converti les chiffres d'une liste en n bits
 def compress(arr, n):
+    # Inputs : arr = numpy array, n = nombre de bits
+    # Output : numpy array avec chiffres encodés sur n bits
+
+    x = np.linspace(0, (2**n-1), 2**n)
     pass
 
 def frequency_content(arr, fc):
     pass
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     ref = np.reshape(pd.read_csv('table_references.csv').to_numpy().T, (1,3,14,1000))
     notes =pd.read_csv('table_references.csv')
     source = np.reshape(notes[['5_1', '5_2', '5_3']].to_numpy().T, (1,3,1000))
+=======
+    ref = np.reshape(pd.read_csv('old_table_references.csv').to_numpy().T, (3,14,1000))
+    notes =pd.read_csv('old_test_table.csv')
+    source = np.reshape(notes['g3_3'].to_numpy().T, (1000))
+    
+>>>>>>> c7b1003 (fixed issues with csv files)
     #xvals = [1]
     #cont_res_plotter(xvals, source, ref, xlabel = 'frequence de coupure [Hz]')
