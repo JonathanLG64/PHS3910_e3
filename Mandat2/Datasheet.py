@@ -86,6 +86,11 @@ def maxrow(arr):
 
 #shape of r array: (npoints, 3, 14, 1000), shape of s array: (npoints, 3, 1000)
 def cont_res_plotter(xvals, s, r, xlabel = 'frequence de coupure [Hz]'):
+    # Inputs
+    #   xvals = valeurs de l'axe x (nombre de bits par exemple)
+    #   s = array avec format (npoints, 3, 1000) contenant les 3 banques de données de références d'une note choisi
+    #   r = array avec format (npoints, 3, 14, 1000) contenant les données des tests modifiées
+
     x = np.linspace(0,r.shape[2]*2e-2, 14)
     # converti toutes les données en contrastes et résoluitions
     cr =  np.array([[cont_res(x, maxrow([[np.max(np.correlate(normalize(so), normalize(ref), mode='same')) for ref in mes] for mes in pos])) for so in s[n]] for n , pos in enumerate(r)])
@@ -127,6 +132,22 @@ def compress(arr, n):
             new_array[column][i] = findClosest(numbers, values[i])
             
     return new_array.add_suffix(f"_{n}bits")
+
+
+def create_compressed_tests_table(df, n):
+    # Input : df = dataframe avec les données à compresser, n = list qui contient les valeurs de bits à tester
+    # Output : csv file avec un format (npoints, df.shape)
+    
+    dfs = {} # Dictionnary to add all dataframes
+    
+    # Create as many dataframe as there are values in the list of number of bits (n)
+    for i in n:
+        dfs[f"{i}"] = compress(df, i)
+    
+    # Concat all the dataframes to create single dataframe with shape (npoints, df.shape)
+    final_df = pd.concat(dfs.values(), axis=1)
+    
+    return final_df.to_csv('caracterisation_bits_ref.csv', mode = 'w', index=False)
 
 
 # ========================== Caractérisation contenu fréquentil ==========================
