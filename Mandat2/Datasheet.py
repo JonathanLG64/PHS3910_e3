@@ -61,7 +61,7 @@ def getClosest(val1, val2, target):
 def cont_res(x, y):
     dx = abs(x[0] - x[1])
     # Trouve le plus grand pic dans le signal
-    peak, _ = signal.find_peaks(y, distance=1e3)
+    peak, _ = signal.find_peaks(y, distance=np.inf)
     # mesure la largeur à mi-hauteur pour calculer la résolution
     width = signal.peak_widths(y, peak, rel_height=0.5)[0][0]
     resolution = width*dx
@@ -101,14 +101,14 @@ def cont_res_plotter(xvals, s, r, xlabel = 'frequence de coupure [Hz]'):
 
     plt.plot(xvals, cr_m[:,0], '-o')
     plt.fill_between(xvals, cr_m[:,0]-cr_std[:,0], cr_m[:,0]+cr_std[:,0], alpha=0.5, color='lightblue')
-    plt.xlabel(xlabel)
-    plt.ylabel('contraste')
+    plt.xlabel(xlabel, fontsize=15)
+    plt.ylabel('contraste', fontsize =15)
     plt.show()
 
     plt.plot(xvals, cr_m[:,1], '-o')
     plt.fill_between(xvals, cr_m[:,1]-cr_std[:,1], cr_m[:,1]+cr_std[:,1], alpha=0.5, color='lightblue')
-    plt.xlabel(xlabel)
-    plt.ylabel('résolution [mm]')
+    plt.xlabel(xlabel, fontsize=15)
+    plt.ylabel('résolution [mm]', fontsize=15)
     plt.show()
 
 # ========================== Caractérisation nombre de bits ==========================
@@ -156,12 +156,15 @@ def frequency_content(arr, fc):
     pass
 
 if __name__ == '__main__':
-    ref = np.reshape(pd.read_csv('table_tests.csv').to_numpy().T, (1,3,14,1000))
-    notes =pd.read_csv('table_tests.csv')
-    source = np.reshape(notes[['4_1', '4_2', '4_3']].to_numpy().T, (1,3,1000))
-    ref = np.reshape(pd.read_csv('old_table_references.csv').to_numpy().T, (3,14,1000))
-    notes =pd.read_csv('old_test_table.csv')
-    source = np.reshape(notes['g3_3'].to_numpy().T, (1000))
+    #ref = np.reshape(pd.read_csv('table_tests.csv').to_numpy().T, (1,3,14,1000))
+    #notes =pd.read_csv('table_tests.csv')
+    #source = np.reshape(notes[['4_1', '4_2', '4_3']].to_numpy().T, (1,3,1000))
+
+    xvals = np.arange(1,17)
+    ref = np.reshape(pd.read_csv('caracterisation_bits_tests.csv').to_numpy().T, (xvals.size,3,14,1000))
+
+    notes =pd.read_csv('caracterisation_bits_ref.csv')
+    source = np.reshape(notes.to_numpy().T, (xvals.size, 3, 1000))
     
-    xvals = [1]
-    cont_res_plotter(xvals, source, ref, xlabel = 'frequence de coupure [Hz]')
+    
+    cont_res_plotter(xvals, source, ref, xlabel = 'Nombre de bits')
