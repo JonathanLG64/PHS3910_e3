@@ -10,8 +10,8 @@ import threading
 import functools
 import pandas as pd
 
-# sélectionne le bon microphone
 def setup_mic():
+    """Selects the user's microphone to be used for measurements"""
     default = True #Si cette option est utilisée, le micro/speaker par défaut est utilisé
     devices = sd.query_devices()
     if not default:
@@ -28,8 +28,15 @@ def setup_mic():
         sd.default.device = [int(DeviceIn), int(DeviceOut)]
         print("Recording with : {} \n".format(devices[sd.default.device[0]]['name']))
 
-# memorise une nouvelle commande
+
 def new_command(file = 'pianoPoints.csv', fs = 44.1e3, seconds=2, chunk_time = 50e-3):
+    """ Saves a new reference point in the database and plots it.
+    input parameters:
+        file-> name of file containing the database
+        fs-> sampling frequency
+        seconds-> amount of time given to take the measurement
+        chunk_time-> duration of data saved in the database
+    """
     com = str(input('Nom de la commande associée à la position: '))
     recording = sd.rec(int(seconds * fs), samplerate=fs, channels= 1).T[0]
     sd.wait() 
@@ -46,7 +53,8 @@ def new_command(file = 'pianoPoints.csv', fs = 44.1e3, seconds=2, chunk_time = 5
     plt.plot(t, recording)
     plt.show()
 
-# définit un décorateur permettant de faire une opération sur un autre thread
+
+#https://stackoverflow.com/questions/67071870/python-make-a-function-always-use-a-thread-without-calling-thread-start
 def threaded(func):
     """Decorator to automatically launch a function in a thread"""
     @functools.wraps(func)
@@ -57,9 +65,13 @@ def threaded(func):
         return thread
     return wrapper
 
-# Joue la note associée au string
 @threaded
 def play_note(com, p):
+    """Plays the note assiciated to the given string
+    input parameters:
+        com-> a string containing the name of the note to be played
+        p-> audio streamer object
+    """
     file = com.split('_')
     filename=f'Wav-Notes\{file[0]}.wav'
     wf = wave.open(filename)
@@ -75,14 +87,19 @@ def play_note(com, p):
         data = wf.readframes(chunk)
 
 def normalize(sig):
+    """Normalizes the signal"""
     return sig / np.linalg.norm(sig)
 
-@threaded
-def correlateTh(sig1, sig2):
-    return np.correlate(sig1, normalize(sig2), mode='same')
-
-# trouve la touche appuyée (prochaine étape: Neural Net)
+# trouve la touche appuyée
 def get_command(sig, file = 'pianoPoints.csv'):
+    """Finds the piano tile that was pressed by using the maximum of correlation
+    Input parameters:
+        sig-> signal that was detected
+        file-> name of the file containing the database
+               of the previous measurements that were done
+    Output parameters:
+        command-> the command that had the best correlation
+    """
     df = pd.read_csv(file)
     corr = np.array([np.max(np.correlate(normalize(sig), normalize(df[col]), mode='same')) for col in df])
     imax = np.argmax(corr)
@@ -93,8 +110,15 @@ def get_command(sig, file = 'pianoPoints.csv'):
     print((command, prob))
     return command
 
-# démarre le piano
 def run_piano(fs=44.1e3, seconds = 0.1, chunk_time = 50-3, file = 'pianoPoints.csv'):
+    """Runs the piano in real time
+    Input parameters:
+        fs-> fréquence d'échantillonage
+        seconds-> minimum time between 
+        chunk_time-> time used to compare the signals
+        file-> the name of the file containing the database
+    """
+
     N = int(seconds * fs)
     stream = sd.InputStream(samplerate=fs, channels=1, blocksize=N)
     stream.start()
@@ -118,6 +142,7 @@ if __name__ == "__main__":
     fs = 20e3
     f = 'table_tests_V2.csv'
     setup_mic()
-    #run_piano(chunk_time=ct, fs=fs, file=f)
-    while True:
-        new_command(chunk_time=ct, fs=fs, file=f)
+    run_piano(chunk_time=ct, fs=fs, file=f)
+    #Utilisé pour enregistrer de nouveaux points
+    #while True:
+    #    new_command(chunk_time=ct, fs=fs, file=f)
