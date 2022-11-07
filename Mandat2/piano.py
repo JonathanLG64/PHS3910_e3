@@ -5,7 +5,6 @@
 import sounddevice as sd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import signal
 import wave, pyaudio
 import threading
 import functools
@@ -89,13 +88,13 @@ def get_command(sig, file = 'pianoPoints.csv'):
     imax = np.argmax(corr)
     prob = corr[imax]
     command = df.keys()[imax]
-    print((command, prob))
-    if prob < 0.8:
+    if prob < 0.83:
         return 'none'
+    print((command, prob))
     return command
 
 # démarre le piano
-def run_piano(fs=44.1e3, seconds = 1, chunk_time = 50-3, file = 'pianoPoints.csv'):
+def run_piano(fs=44.1e3, seconds = 0.1, chunk_time = 50-3, file = 'pianoPoints.csv'):
     N = int(seconds * fs)
     stream = sd.InputStream(samplerate=fs, channels=1, blocksize=N)
     stream.start()
@@ -117,8 +116,8 @@ def run_piano(fs=44.1e3, seconds = 1, chunk_time = 50-3, file = 'pianoPoints.csv
 if __name__ == "__main__":
     ct = 50e-3
     fs = 20e3
-    f = 'pianoPoints.csv'
+    f = 'table_tests_V2.csv'
     setup_mic()
-    run_piano(chunk_time=ct, fs=fs, file=f)
-    #while True:
-    #    new_command(chunk_time=ct, fs=fs, file=f)
+    #run_piano(chunk_time=ct, fs=fs, file=f)
+    while True:
+        new_command(chunk_time=ct, fs=fs, file=f)
