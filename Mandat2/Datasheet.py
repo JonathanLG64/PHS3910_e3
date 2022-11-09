@@ -155,6 +155,39 @@ def create_compressed_tests_table(df, n):
 def frequency_content(arr, fc):
     pass
 
+
+# ========================== Caractérisation fréquence échantillonnage ==========================
+#Fonction qui permet de modifier (diminuer) la fréquence d'échantillonnage 
+def freq_echant(arr,n ):
+    # Inputs : arr = numpy array, n = 20e3/f_echant
+    # Output : numpy array avec f_echant=20e3/n
+  test=arr.to_numpy()   #changement de type pour éviter les NaN
+
+  new_array=test[(n-1)::n]  #Prends en compte tous les multiples entiers de n points 
+
+  df = pd.DataFrame(new_array)
+
+  new_array_3 = df.add_suffix(f"_{n}")
+
+  return new_array_3  #.add_suffix(f"_n={n}")
+
+def create_compressed_tests_table(df, n):
+    # Input : df = dataframe avec les données à compresser, n = list qui contient les valeurs de bits à tester
+    # Output : csv file avec un format (npoints, df.shape)
+    
+    dfs = {} # Dictionnary to add all dataframes
+    
+    # Create as many dataframe as there are values in the list of number of bits (n)
+    for i in n:
+        dfs[f"{i}"] = freq_echant(df, i)
+    
+    # Concat all the dataframes to create single dataframe with shape (npoints, df.shape)
+    final_df = pd.concat(dfs.values(), axis=1)
+    
+    return final_df
+
+
+
 if __name__ == '__main__':
     #ref = np.reshape(pd.read_csv('table_tests.csv').to_numpy().T, (1,3,14,1000))
     #notes =pd.read_csv('table_tests.csv')
