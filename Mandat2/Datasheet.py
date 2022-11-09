@@ -150,10 +150,39 @@ def create_compressed_tests_table(df, n):
     return final_df.to_csv('caracterisation_bits_ref.csv', mode = 'w', index=False)
 
 
-# ========================== Caractérisation contenu fréquentil ==========================
+# FONCTION POUR VARIATIO FREQU COUPURE
 
-def frequency_content(arr, fc):
-    pass
+def frequency_content(donnees, fc): # donnees = sol_ref ou tests , fc = np.logspace(1,4.301,15)
+    
+    duree = 50e-3 # Durée de l'échantillonnage (s)
+    t = np.arange(0,duree,duree/1000) # Vecteur temps de la durée de l'échantillonnage 
+    n = t.size
+    timestep = duree/n
+
+    size = len(donnees[0,:])
+    sol_donnees_fourrier = []
+
+    freq = np.fft.fftfreq(n,d=timestep)
+
+    new_sol_donnees_all = []
+
+    for j in range(len(fc)): # Pour chaque fréquence de coupure
+
+        for a in range(0,size): # Pour chaque signal de note
+    
+            y = fc[j]
+            sol_donnees_coupe = np.fft.fft(donnees[:,a])
+
+            for i in range(len(freq)): # pour toutes les fréquences du signal 
+
+                if abs(freq[i]) > y:
+                    sol_donnees_coupe[i] = 0.000001
+
+            new_sol_donnees = np.fft.ifft(sol_donnees_coupe) # domaine temporel
+    
+            new_sol_donnees_all.append((new_sol_donnees.real))
+
+    return new_sol_donnees_all
 
 
 # ========================== Caractérisation fréquence échantillonnage ==========================
