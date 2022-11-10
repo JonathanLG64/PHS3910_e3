@@ -1,7 +1,3 @@
-# Vous devez installer la librairie sounddevice
-# PIP :  pip install sounddevice
-# Anaconda : conda install -c conda-forge python-sounddevice
-
 import sounddevice as sd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,7 +7,7 @@ import functools
 import pandas as pd
 
 def setup_mic():
-    """Selects the user's microphone to be used for measurements"""
+    """Selects the microphone to be used for measurements"""
     default = True #Si cette option est utilisée, le micro/speaker par défaut est utilisé
     devices = sd.query_devices()
     if not default:
@@ -27,7 +23,6 @@ def setup_mic():
 
         sd.default.device = [int(DeviceIn), int(DeviceOut)]
         print("Recording with : {} \n".format(devices[sd.default.device[0]]['name']))
-
 
 def new_command(file = 'pianoPoints.csv', fs = 44.1e3, seconds=2, chunk_time = 50e-3):
     """ Saves a new reference point in the database and plots it.
@@ -52,7 +47,6 @@ def new_command(file = 'pianoPoints.csv', fs = 44.1e3, seconds=2, chunk_time = 5
     t = np.linspace(0, chunk_time, chunk)
     plt.plot(t, recording)
     plt.show()
-
 
 #https://stackoverflow.com/questions/67071870/python-make-a-function-always-use-a-thread-without-calling-thread-start
 def threaded(func):
@@ -90,7 +84,6 @@ def normalize(sig):
     """Normalizes the signal"""
     return sig / np.linalg.norm(sig)
 
-# trouve la touche appuyée
 def get_command(sig, file = 'pianoPoints.csv'):
     """Finds the piano tile that was pressed by using the maximum of correlation
     Input parameters:
@@ -101,7 +94,8 @@ def get_command(sig, file = 'pianoPoints.csv'):
         command-> the command that had the best correlation
     """
     df = pd.read_csv(file)
-    corr = np.array([np.max(np.correlate(normalize(sig), normalize(df[col]), mode='same')) for col in df])
+    corr = np.array([np.max(np.correlate(normalize(sig),
+     normalize(df[col]), mode='same')) for col in df])
     imax = np.argmax(corr)
     prob = corr[imax]
     command = df.keys()[imax]
@@ -125,7 +119,7 @@ def run_piano(fs=44.1e3, seconds = 0.1, chunk_time = 50-3, file = 'pianoPoints.c
     audio_streamer = pyaudio.PyAudio()
     chunk = int(chunk_time * fs)
     while True:
-        reading = stream.read(frames=N)[0].T[0] #lecture en temps réel
+        reading = stream.read(frames=N)[0].T[0]
         peak = np.argmax(reading)
         s = reading[peak:peak+chunk].astype(np.float16)
         command = get_command(s, file=file)
@@ -140,9 +134,9 @@ def run_piano(fs=44.1e3, seconds = 0.1, chunk_time = 50-3, file = 'pianoPoints.c
 if __name__ == "__main__":
     ct = 50e-3
     fs = 20e3
-    f = 'table_tests_V2.csv'
+    f = 'banque_reference_notes.csv'
     setup_mic()
     run_piano(chunk_time=ct, fs=fs, file=f)
-    #Utilisé pour enregistrer de nouveaux points
+    #Used to save new points in the dataset in a speedy way
     #while True:
     #    new_command(chunk_time=ct, fs=fs, file=f)
