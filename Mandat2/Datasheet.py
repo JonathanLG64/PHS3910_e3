@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# ================== Find element closest to given target using binary search =====================
+# ======== Find element closest to given target using binary search =========
 
 def findClosest(arr, target):
     # Returns element closest to target in arr[]
@@ -47,7 +47,8 @@ def findClosest(arr, target):
     return arr[mid]
 
 def getClosest(val1, val2, target):
-    # Find closest value to target between two values by taking the difference between the target and both values. 
+    # Find closest value to target between two values 
+    # by taking the difference between the target and both values. 
     # It assumes that val2 is greater than val1 and target lies between these two.
  
     if (target - val1 >= val2 - target):
@@ -56,7 +57,7 @@ def getClosest(val1, val2, target):
         return val1
 
 
-# ========================== Graphique résolution et contraste ==========================
+# ========= Graphique résolution et contraste =========
 
 def cont_res(x, y):
     dx = abs(x[0] - x[1])
@@ -88,30 +89,40 @@ def maxrow(arr):
 def cont_res_plotter(xvals, s, r, xlabel = 'frequence de coupure [Hz]'):
     # Inputs
     #   xvals = valeurs de l'axe x (nombre de bits par exemple)
-    #   s = array avec format (npoints, 3, 1000) contenant les 3 banques de données de références d'une note choisi
-    #   r = array avec format (npoints, 3, 14, 1000) contenant les données des tests modifiées
+    #   s = array avec format (npoints, 3, 1000) contenant les 3 
+    #       banques de données de références d'une note choisi
+    #   r = array avec format (npoints, 3, 14, 1000) contenant 
+    #       les données des tests modifiées
 
     x = np.linspace(0,r.shape[2]*2e-2, 14)
-    # converti toutes les données en contrastes et résoluitions
-    cr =  np.array([[cont_res(x, maxrow([[np.max(np.correlate(normalize(so), normalize(ref), mode='same')) for ref in mes] for mes in pos])) for so in s[n]] for n , pos in enumerate(r)])
-    # converti les m en mm pour la résolution
+    # converti les signaux en valeurs de contrastes et résolutions
+    cr =  np.array([[cont_res(x,
+                     maxrow([[np.max(np.correlate(normalize(so),
+                                                  normalize(ref), mode='same'))
+                                                  for ref in mes] 
+                                                  for mes in pos])) 
+                                                  for so in s[n]] 
+                                                  for n , pos in enumerate(r)])
+    # convertit des mètres en milimètres pour la résolution
     cr[:,:,1] = cr[:,:,1]*1e3
     # calcule la moyenne et l'écart-type
     cr_m, cr_std = np.mean(cr, axis=1), np.std(cr, axis=1)
 
     plt.plot(xvals, cr_m[:,0], '-o')
-    plt.fill_between(xvals, cr_m[:,0]-cr_std[:,0], cr_m[:,0]+cr_std[:,0], alpha=0.5, color='lightblue')
+    plt.fill_between(xvals, cr_m[:,0]-cr_std[:,0], cr_m[:,0]+cr_std[:,0],
+     alpha=0.5, color='lightblue')
     plt.xlabel(xlabel, fontsize=15)
     plt.ylabel('contraste', fontsize =15)
     plt.show()
 
     plt.plot(xvals, cr_m[:,1], '-o')
-    plt.fill_between(xvals, cr_m[:,1]-cr_std[:,1], cr_m[:,1]+cr_std[:,1], alpha=0.5, color='lightblue')
+    plt.fill_between(xvals, cr_m[:,1]-cr_std[:,1], cr_m[:,1]+cr_std[:,1],
+     alpha=0.5, color='lightblue')
     plt.xlabel(xlabel, fontsize=15)
     plt.ylabel('résolution [mm]', fontsize=15)
     plt.show()
 
-# ========================== Caractérisation nombre de bits ==========================
+# ========= Caractérisation nombre de bits =========
 
 # Fonction qui converti les chiffres d'une liste en n bits
 def compress(arr, n):
@@ -135,27 +146,31 @@ def compress(arr, n):
 
 
 def create_compressed_tests_table(df, n):
-    # Input : df = dataframe avec les données à compresser, n = list qui contient les valeurs de bits à tester
+    # Input : df = dataframe avec les données à compresser, n = list qui 
+    #              contient les valeurs de bits à tester
     # Output : csv file avec un format (npoints, df.shape)
     
     dfs = {} # Dictionnary to add all dataframes
     
-    # Create as many dataframe as there are values in the list of number of bits (n)
+    # Create as many dataframe as there are values in the list
+    # of number of bits (n)
     for i in n:
         dfs[f"{i}"] = compress(df, i)
     
-    # Concat all the dataframes to create single dataframe with shape (npoints, df.shape)
+    # Concat all the dataframes to create single 
+    # dataframe with shape (npoints, df.shape)
     final_df = pd.concat(dfs.values(), axis=1)
     
     return final_df.to_csv('caracterisation_bits_ref.csv', mode = 'w', index=False)
 
 
-# FONCTION POUR VARIATIO FREQU COUPURE
+# FONCTION POUR VARIATION FREQUENCE DE COUPURE
 
-def frequency_content(donnees, fc): # donnees = sol_ref ou tests , fc = np.logspace(1,4.301,15)
+def frequency_content(donnees, fc): 
+    # donnees = sol_ref ou tests , fc = np.logspace(1,4.301,15)
     
     duree = 50e-3 # Durée de l'échantillonnage (s)
-    t = np.arange(0,duree,duree/1000) # Vecteur temps de la durée de l'échantillonnage 
+    t = np.arange(0,duree,duree/1000) # Vecteur du temps d'échantillonnage 
     n = t.size
     timestep = duree/n
 
@@ -185,7 +200,7 @@ def frequency_content(donnees, fc): # donnees = sol_ref ou tests , fc = np.logsp
     return new_sol_donnees_all
 
 
-# ========================== Caractérisation fréquence échantillonnage ==========================
+# ========= Caractérisation fréquence échantillonnage =========
 #Fonction qui permet de modifier (diminuer) la fréquence d'échantillonnage 
 def freq_echant(arr,n ):
     # Inputs : arr = numpy array, n = 20e3/f_echant
@@ -201,16 +216,19 @@ def freq_echant(arr,n ):
   return new_array_3  #.add_suffix(f"_n={n}")
 
 def create_compressed_tests_table(df, n):
-    # Input : df = dataframe avec les données à compresser, n = list qui contient les valeurs de bits à tester
+    # Input : df = dataframe avec les données à compresser
+    #         n = list qui contient les valeurs de bits à tester
     # Output : csv file avec un format (npoints, df.shape)
     
     dfs = {} # Dictionnary to add all dataframes
     
-    # Create as many dataframe as there are values in the list of number of bits (n)
+    # Create as many dataframe as there are 
+    # values in the list of number of bits (n)
     for i in n:
         dfs[f"{i}"] = freq_echant(df, i)
     
-    # Concat all the dataframes to create single dataframe with shape (npoints, df.shape)
+    # Concat all the dataframes to create single 
+    # dataframe with shape (npoints, df.shape)
     final_df = pd.concat(dfs.values(), axis=1)
     
     return final_df
@@ -223,7 +241,8 @@ if __name__ == '__main__':
     #source = np.reshape(notes[['4_1', '4_2', '4_3']].to_numpy().T, (1,3,1000))
 
     xvals = np.arange(1,17)
-    ref = np.reshape(pd.read_csv('caracterisation_bits_tests.csv').to_numpy().T, (xvals.size,3,14,1000))
+    ref = np.reshape(pd.read_csv('caracterisation_bits_tests.csv').to_numpy().T,
+                     (xvals.size,3,14,1000))
 
     notes =pd.read_csv('caracterisation_bits_ref.csv')
     source = np.reshape(notes.to_numpy().T, (xvals.size, 3, 1000))
