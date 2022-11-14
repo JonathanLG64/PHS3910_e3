@@ -112,7 +112,6 @@ def run_piano(fs=44.1e3, seconds = 0.1, chunk_time = 50-3, file = 'pianoPoints.c
         chunk_time-> time used to compare the signals
         file-> the name of the file containing the database
     """
-
     N = int(seconds * fs)
     stream = sd.InputStream(samplerate=fs, channels=1, blocksize=N)
     stream.start()
