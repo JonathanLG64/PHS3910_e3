@@ -53,7 +53,28 @@ lbd = np.linspace(400, 700, 10)# longueur d'onde
 f1 = np.linspace(10e-3, 100e-3, 100)# focale de la 1ere lentille
 f2 = np.linspace(10e-3, 100e-3, 100)# focale de la 2e lentille
 L = np.linspace(1e-3, 5e-3, 100)# taille de l'ouverture
-Lambda = 1/600e3# pas du réseau
+Lambda = 1/(600000)# pas du réseau
 
+pixel_size = 3.45e-6
+camera_size = (1440, 1080) 
 
+x = np.linspace(-camera_size[0]*pixel_size/2,
+                camera_size[0]*pixel_size/2,
+                camera_size[0])
+
+y = np.linspace(-camera_size[1]*pixel_size/2,
+                camera_size[1]*pixel_size/2,
+                camera_size[1])
+
+def rect(x, a):
+    return np.where(abs(x) <= a, 1, 0)
+
+def comb(x, Lambda):
+    N = x.size
+    Nlambda = 2*max(x) // Lambda
+    print(Nlambda)    
+    #return 
+
+plt.plot(x, comb(x, Lambda))
+plt.show()
 print(wavelength_to_rgb(645))
