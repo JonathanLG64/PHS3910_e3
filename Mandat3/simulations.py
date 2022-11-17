@@ -100,12 +100,12 @@ def plot_spectrum(X, Y, wavelengths):
     plt.show()
 
 if __name__ == '__main__':
-    wavelengths = [400]# longueurs d'ondes
+    wavelengths = [430]# longueurs d'ondes
 
     # paramètres à définir, d'autres paramètres peuvent intervenir
     f1 = 50e-3# focale de la 1ere lentille
-    f2 = 30e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
-    a = 2e-3#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
+    f2 = 20e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
+    a = 1e-1#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
     beta = np.radians(8.616) # angle de Blaze
     b = 0.02
     Lambda = (1e-3/(600)) # pas du réseau
@@ -120,6 +120,5 @@ if __name__ == '__main__':
                     camera_size[1]*pixel_size/2,
                     camera_size[1])
     X, Y = np.meshgrid(x, y)
-
 
     plot_spectrum(X, Y, wavelengths)
