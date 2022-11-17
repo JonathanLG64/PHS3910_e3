@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-from scipy.signal import convolve
+from scipy.signal import convolve, unit_impulse, find_peaks, peak_widths
+from numba import njit
 
 def wavelength_to_rgb(wavelength, gamma=0.8):
     '''This converts a given wavelength of light to an 
@@ -49,51 +50,76 @@ def wavelength_to_rgb(wavelength, gamma=0.8):
     B *= 255
     return (int(R), int(G), int(B))
 
-# paramètres à définir, d'autres paramètres peuvent intervenir
-f1 = 50e-3# focale de la 1ere lentille
-f2 = 10e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
-a = 2e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
-Lambda = 1e-3/(6000)# pas du réseau
-beta = np.radians(8.616)# angle de Blaze
-b = 0.02
-
-pixel_size = 3.45e-6
-camera_size = (1440, 1080) 
-
-x = np.linspace(-camera_size[0]*pixel_size/2,
-                camera_size[0]*pixel_size/2,
-                camera_size[0])
-
-y = np.linspace(-camera_size[1]*pixel_size/2,
-                camera_size[1]*pixel_size/2,
-                camera_size[1])
-X, Y = np.meshgrid(x, y)
-
 def rect(x):
     return np.where(abs(x)<=0.5,1,0)
 
+#TODO: issue where the first step is outside of the camera
 def comb(x, a):
-    N = x.shape[0]
     arr = np.zeros_like(x)
-    arr[N//2, N//2] = 1
+    arr[x.shape[0]//2, x.shape[1]//2] = 1
 
     return arr
 
 def U2(x, y, lbd):
     t1 = rect(x*f1/(a*f2))*rect(y*f1/(b*f2))
-    t4 = comb(x, (Lambda/ (f2*lbd)))*np.sinc(Lambda*x / (lbd*f2) - Lambda*beta / (2*np.pi))
-    return convolve(t1, t4, mode = 'same')
+    t4 = comb(x, (Lambda/ (f2*lbd))**-1)*np.sinc(Lambda*x / (lbd*f2) - Lambda*beta / (2*np.pi))
+    return convolve(t1, t4, mode='same')
 
-def plot_spectrum(X, Y, lbd):
-    data = U2(X,Y, lbd*1e-9)
-    rgb = np.array(wavelength_to_rgb(lbd))
-    rgbdata = np.array([[(val*rgb).astype(np.uint8) for val in row ] for row in data])
+def res(x):
+    # Trouve le plus grand pic dans le signal
+    try:
+        plt.plot(x)
+        plt.show()
+        peak, _ = find_peaks(x, height=0.5)
+        # mesure la largeur à mi-hauteur pour calculer la résolution
+        width = peak_widths(x, peak, rel_height=0.8)[0][0]
+        resolution = width*pixel_size
+    except:
+        return 0
+    return resolution
 
-    plt.imshow(rgbdata)
+def res_avg(meshdata):
+    avgres = np.mean([res(row) for row in meshdata if res(row) !=0])
+    return avgres
+
+def plot_spectrum(X, Y, wavelengths):
+    combined = None
+    for i, lbd in enumerate(wavelengths):
+        intensity = U2(X,Y, lbd*1e-9)
+        rgb = np.array(wavelength_to_rgb(lbd))
+        # multiplies intensities by the rgb values of the wavelength
+        rgbdata = np.array([[(val*rgb).astype(np.uint8) for val in row ] for row in intensity])
+        if i == 0:
+            combined = rgbdata
+        else:
+            combined += rgbdata
+
+    plt.imshow(combined)
     plt.xlabel('x')
     plt.ylabel('y')
     plt.show()
 
-wavelengths = 460# longueurs d'ondes
+if __name__ == '__main__':
+    wavelengths = [450]# longueurs d'ondes
 
-plot_spectrum(X, Y, wavelengths)
+    # paramètres à définir, d'autres paramètres peuvent intervenir
+    f1 = 50e-3# focale de la 1ere lentille
+    f2 = 20e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
+    a = 2e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
+    beta = np.radians(8.616) # angle de Blaze
+    b = 0.02
+    Lambda = (1e-3/(600)) # pas du réseau
+    pixel_size = 3.45e-6
+    camera_size = (1440, 1080) 
+
+    x = np.linspace(-camera_size[0]*pixel_size/2,
+                    camera_size[0]*pixel_size/2,
+                    camera_size[0])
+
+    y = np.linspace(-camera_size[1]*pixel_size/2,
+                    camera_size[1]*pixel_size/2,
+                    camera_size[1])
+    X, Y = np.meshgrid(x, y)
+
+
+    plot_spectrum(X, Y, wavelengths)
