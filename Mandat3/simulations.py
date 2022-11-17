@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+from scipy.signal import convolve
 
 def wavelength_to_rgb(wavelength, gamma=0.8):
     '''This converts a given wavelength of light to an 
@@ -49,11 +50,12 @@ def wavelength_to_rgb(wavelength, gamma=0.8):
     return (int(R), int(G), int(B))
 
 # paramètres à définir, d'autres paramètres peuvent intervenir
-lbd = np.linspace(400, 700, 10)# longueur d'onde
-f1 = np.linspace(10e-3, 100e-3, 100)# focale de la 1ere lentille
-f2 = np.linspace(10e-3, 100e-3, 100)# focale de la 2e lentille
-L = np.linspace(1e-3, 5e-3, 100)# taille de l'ouverture
+f1 = 50e-3# focale de la 1ere lentille
+f2 = 20e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
+a = 1e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
 Lambda = 1/(600000)# pas du réseau
+beta = np.radians(8.616)# angle de Blaze
+b = 0.02
 
 pixel_size = 3.45e-6
 camera_size = (1440, 1080) 
@@ -65,16 +67,30 @@ x = np.linspace(-camera_size[0]*pixel_size/2,
 y = np.linspace(-camera_size[1]*pixel_size/2,
                 camera_size[1]*pixel_size/2,
                 camera_size[1])
+X, Y = np.meshgrid(x, y)
 
-def rect(x, a):
-    return np.where(abs(x) <= a, 1, 0)
+def rect(x):
+    return np.where(abs(x)<=0.5,1,0)
 
-def comb(x, Lambda):
-    N = x.size
-    Nlambda = 2*max(x) // Lambda
-    print(Nlambda)    
-    #return 
+def comb(x):
+    N = x.shape[0]
+    arr = np.zeros_like(x)
+    arr[N//2, N//2] = 1
+    return arr
 
-plt.plot(x, comb(x, Lambda))
-plt.show()
-print(wavelength_to_rgb(645))
+def U2(x, y, lbd):
+    t1 = comb(x*(Lambda/ (f2*lbd)))*np.sinc(Lambda*x / (lbd*f2) - Lambda*beta / (2*np.pi))
+    t4 = rect(x*f1/(a*f2))*rect(y*f1/(b*f2))
+    return convolve(t1, t4, mode = 'same')
+
+def plot_spectrum(X, Y, wavelengths):
+    data = sum([[[wavelength_to_rgb(lbd) * col for col in row] for row in U2(X,Y, lbd*1e-9)] for lbd in wavelengths])
+    plt.imshow(data)
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.show()
+
+
+wavelengths = np.linspace(400, 700, 2)# longueur d'onde
+
+plot_spectrum(X, Y, wavelengths)
