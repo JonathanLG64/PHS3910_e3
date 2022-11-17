@@ -57,7 +57,6 @@ def rect(x):
 def comb(x, a):
     arr = np.zeros_like(x)
     arr[x.shape[0]//2, :] = 1
-
     return arr
 
 def U2(x, y, lbd):
@@ -86,6 +85,7 @@ def plot_spectrum(X, Y, wavelengths):
     combined = None
     for i, lbd in enumerate(wavelengths):
         intensity = U2(X,Y, lbd*1e-9)
+        intensity /= np.max(intensity)
         rgb = np.array(wavelength_to_rgb(lbd))
         # multiplies intensities by the rgb values of the wavelength
         rgbdata = np.array([[(val*rgb).astype(np.uint8) for val in row ] for row in intensity])
@@ -100,12 +100,12 @@ def plot_spectrum(X, Y, wavelengths):
     plt.show()
 
 if __name__ == '__main__':
-    wavelengths = [450, 650]# longueurs d'ondes
+    wavelengths = [400]# longueurs d'ondes
 
     # paramètres à définir, d'autres paramètres peuvent intervenir
     f1 = 50e-3# focale de la 1ere lentille
-    f2 = 20e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
-    a = 2e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
+    f2 = 30e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
+    a = 2e-3#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
     beta = np.radians(8.616) # angle de Blaze
     b = 0.02
     Lambda = (1e-3/(600)) # pas du réseau
