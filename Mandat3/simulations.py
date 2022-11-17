@@ -51,9 +51,9 @@ def wavelength_to_rgb(wavelength, gamma=0.8):
 
 # paramètres à définir, d'autres paramètres peuvent intervenir
 f1 = 50e-3# focale de la 1ere lentille
-f2 = 20e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
-a = 1e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
-Lambda = 1/(600000)# pas du réseau
+f2 = 10e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
+a = 2e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
+Lambda = 1e-3/(6000)# pas du réseau
 beta = np.radians(8.616)# angle de Blaze
 b = 0.02
 
@@ -72,25 +72,28 @@ X, Y = np.meshgrid(x, y)
 def rect(x):
     return np.where(abs(x)<=0.5,1,0)
 
-def comb(x):
+def comb(x, a):
     N = x.shape[0]
     arr = np.zeros_like(x)
     arr[N//2, N//2] = 1
+
     return arr
 
 def U2(x, y, lbd):
-    t1 = comb(x*(Lambda/ (f2*lbd)))*np.sinc(Lambda*x / (lbd*f2) - Lambda*beta / (2*np.pi))
-    t4 = rect(x*f1/(a*f2))*rect(y*f1/(b*f2))
+    t1 = rect(x*f1/(a*f2))*rect(y*f1/(b*f2))
+    t4 = comb(x, (Lambda/ (f2*lbd)))*np.sinc(Lambda*x / (lbd*f2) - Lambda*beta / (2*np.pi))
     return convolve(t1, t4, mode = 'same')
 
-def plot_spectrum(X, Y, wavelengths):
-    data = sum([[[wavelength_to_rgb(lbd) * col for col in row] for row in U2(X,Y, lbd*1e-9)] for lbd in wavelengths])
-    plt.imshow(data)
+def plot_spectrum(X, Y, lbd):
+    data = U2(X,Y, lbd*1e-9)
+    rgb = np.array(wavelength_to_rgb(lbd))
+    rgbdata = np.array([[(val*rgb).astype(np.uint8) for val in row ] for row in data])
+
+    plt.imshow(rgbdata)
     plt.xlabel('x')
     plt.ylabel('y')
     plt.show()
 
-
-wavelengths = np.linspace(400, 700, 2)# longueur d'onde
+wavelengths = 460# longueurs d'ondes
 
 plot_spectrum(X, Y, wavelengths)
