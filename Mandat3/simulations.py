@@ -56,7 +56,7 @@ def rect(x):
 #TODO: issue where the first step is outside of the camera
 def comb(x, a):
     arr = np.zeros_like(x)
-    arr[x.shape[0]//2, x.shape[1]//2] = 1
+    arr[x.shape[0]//2, :] = 1
 
     return arr
 
@@ -100,7 +100,7 @@ def plot_spectrum(X, Y, wavelengths):
     plt.show()
 
 if __name__ == '__main__':
-    wavelengths = [450]# longueurs d'ondes
+    wavelengths = [450, 650]# longueurs d'ondes
 
     # paramètres à définir, d'autres paramètres peuvent intervenir
     f1 = 50e-3# focale de la 1ere lentille
