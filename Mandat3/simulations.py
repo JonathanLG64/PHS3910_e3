@@ -59,9 +59,23 @@ def comb(x, a):
     arr[x.shape[0]//2, :] = 1
     return arr
 
+def comb_sinc(x,lbd):   #renvoie le comb*sinc correspondant à notre modèle
+  Lambda = 1e-3/(600)
+    
+  u=Lambda/(f2*lbd)
+  v=Lambda*2*np.deg2rad(8.616)/(lbd)
+  w=x[0]
+  b=np.abs(w[0]-w[1])   #step (taille 1 pixel ?)
+  c=1/(Lambda/(f2*lbd))     #step entre les pics du comb
+  d=int(np.round(c/b))      #nombre de pixel entre les pics de dirac
+  DiracComb = np.zeros_like(x)
+  for i in DiracComb:
+    i[::d]= 1*np.sinc(u*w[::d] - v)      #array avec valeur des sinc à la position des pics du comb
+  return DiracComb
+
 def U2(x, y, lbd):
     t1 = rect(x*f1/(a*f2))*rect(y*f1/(b*f2))
-    t4 = comb(x, (Lambda/ (f2*lbd))**-1)*np.sinc(Lambda*x / (lbd*f2) - Lambda*beta / (2*np.pi))
+    t4 = comb_sinc(x,lbd)
     return convolve(t1, t4, mode='same')
 
 def res(x):
@@ -100,12 +114,12 @@ def plot_spectrum(X, Y, wavelengths):
     plt.show()
 
 if __name__ == '__main__':
-    wavelengths = [430]# longueurs d'ondes
+    wavelengths = [600]# longueurs d'ondes
 
     # paramètres à définir, d'autres paramètres peuvent intervenir
     f1 = 50e-3# focale de la 1ere lentille
-    f2 = 20e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
-    a = 1e-1#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
+    f2 = 30e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
+    a = 1e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
     beta = np.radians(8.616) # angle de Blaze
     b = 0.02
     Lambda = (1e-3/(600)) # pas du réseau
