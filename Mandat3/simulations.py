@@ -77,8 +77,10 @@ def comb_sinc(x,lbd):   #renvoie le comb*sinc correspondant à notre modèle
 
 def U2(x, y, lbd):
     t1 = rect(x*f1/(a*f2))*rect(y*f1/(b*f2))
+    t3=np.sinc((x*25e-3/(lbd*f2)))
     t4 = comb_sinc(x,lbd)
-    return convolve(t1, t4, mode='same')
+    t7=convolve(t3,t1)
+    return convolve(t7, t4, mode='same')
 
 def res(x):
     # Trouve le plus grand pic dans le signal
@@ -127,8 +129,8 @@ def plot_spectrum(X, Y, wavelengths):
 if __name__ == '__main__':
     # paramètres à définir, d'autres paramètres peuvent intervenir
     f1 = 50e-3# focale de la 1ere lentille
-    f2 = 10e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
-    a = 1e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
+    f2 = 20e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
+    a = 2e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
     beta = np.radians(8.616) # angle de Blaze
     b = 0.02
     Lambda = (1e-3/(600)) # pas du réseau
@@ -144,5 +146,5 @@ if __name__ == '__main__':
                     camera_size[1])
     X, Y = np.meshgrid(x, y)
 
-    wavelengths = np.linspace(400, 700, 15)# longueurs d'ondes
+    wavelengths = [600]#np.linspace(400, 700, 15)# longueurs d'ondes
     plot_spectrum(X, Y, wavelengths)
