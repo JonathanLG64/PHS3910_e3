@@ -50,10 +50,12 @@ def wavelength_to_rgb(wavelength, gamma=0.8):
     B *= 255
     return (int(R), int(G), int(B))
 
+
 def rect(x):
-    return np.where(abs(x)<=0.5,1,0)
+    return np.where(np.abs(x)<=0.5,1,0)
 
 #TODO: issue where the first step is outside of the camera
+
 def comb(x, a):
     arr = np.zeros_like(x)
     arr[x.shape[0]//2, :] = 1
@@ -90,19 +92,28 @@ def res(x):
     except:
         return 0
     return resolution
-
+    
 def res_avg(meshdata):
     avgres = np.mean([res(row) for row in meshdata if res(row) !=0])
     return avgres
+
+@njit    
+def U2_to_rgb(data, rgb):
+    rgbdata = np.zeros((data.shape[0], data.shape[1], 3), dtype = np.uint8)
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            for k in range(3):
+                rgbdata[i,j,k] = data[i,j]*rgb[k]
+    return rgbdata
 
 def plot_spectrum(X, Y, wavelengths):
     combined = None
     for i, lbd in enumerate(wavelengths):
         intensity = U2(X,Y, lbd*1e-9)
         intensity /= np.max(intensity)
-        rgb = np.array(wavelength_to_rgb(lbd))
+        rgb = wavelength_to_rgb(lbd)
         # multiplies intensities by the rgb values of the wavelength
-        rgbdata = np.array([[(val*rgb).astype(np.uint8) for val in row ] for row in intensity])
+        rgbdata = U2_to_rgb(intensity, rgb)
         if i == 0:
             combined = rgbdata
         else:
@@ -114,11 +125,9 @@ def plot_spectrum(X, Y, wavelengths):
     plt.show()
 
 if __name__ == '__main__':
-    wavelengths = [600]# longueurs d'ondes
-
     # paramètres à définir, d'autres paramètres peuvent intervenir
     f1 = 50e-3# focale de la 1ere lentille
-    f2 = 30e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
+    f2 = 10e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
     a = 1e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
     beta = np.radians(8.616) # angle de Blaze
     b = 0.02
@@ -135,4 +144,5 @@ if __name__ == '__main__':
                     camera_size[1])
     X, Y = np.meshgrid(x, y)
 
+    wavelengths = np.linspace(400, 700, 15)# longueurs d'ondes
     plot_spectrum(X, Y, wavelengths)
