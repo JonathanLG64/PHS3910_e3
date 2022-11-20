@@ -50,9 +50,6 @@ def wavelength_to_rgb(wavelength, gamma=0.8):
     B *= 255
     return (int(R), int(G), int(B))
 
-
-
-
 #def comb_sinc(x,lbd):   #renvoie le comb*sinc correspondant à notre modèle
 #    Lambda = 1e-3/(600)
 #
@@ -72,12 +69,10 @@ def wavelength_to_rgb(wavelength, gamma=0.8):
 def rect(x):
     return np.where(np.abs(x)<=0.5,1,0)
 
-@njit
 def comb(x, a):
     step = int(np.round(a / pixel_size))
     diracComb = np.zeros_like(x)
-    for diracrow in diracComb:
-        diracrow[::step] = 1
+    diracComb[:, ::step] = 1 
     return diracComb
 
 def U2(lbd, f1, f2, a):
@@ -145,7 +140,7 @@ if __name__ == '__main__':
                     camera_size[1])
     X, Y = np.meshgrid(x, y)
 
-    spectrum = get_spectrum(np.linspace(380, 750, 40), f1, f2, a)
+    spectrum = get_spectrum(np.linspace(380, 750, 15), f1, f2, a)
     plt.imshow(spectrum)
     plt.xlabel('x (pixels)')
     plt.ylabel('y (pixels)')
