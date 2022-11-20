@@ -51,42 +51,43 @@ def wavelength_to_rgb(wavelength, gamma=0.8):
     return (int(R), int(G), int(B))
 
 
+
+
+#def comb_sinc(x,lbd):   #renvoie le comb*sinc correspondant à notre modèle
+#    Lambda = 1e-3/(600)
+#
+#    u=Lambda/(f2*lbd)
+#    v=Lambda*2*np.deg2rad(8.616)/(lbd)
+#    w=x[0]
+#    b=np.abs(w[0]-w[1])   #step (taille 1 pixel ?)
+#    c=1/(Lambda/(f2*lbd))     #step entre les pics du comb
+#    d=int(np.round(c/b))      #nombre de pixel entre les pics de dirac
+#    DiracComb = np.zeros_like(x)
+#    for i in DiracComb:
+#        i[::d]= np.sinc(u*w[::d] - v)      #array avec valeur des sinc à la position des pics du comb
+#    plt.imshow(DiracComb)
+#    plt.show()
+#    return DiracComb
+
 def rect(x):
     return np.where(np.abs(x)<=0.5,1,0)
 
-#TODO: issue where the first step is outside of the camera
-
+@njit
 def comb(x, a):
-    arr = np.zeros_like(x)
-    arr[x.shape[0]//2, :] = 1
-    return arr
+    step = int(np.round(a / pixel_size))
+    diracComb = np.zeros_like(x)
+    for diracrow in diracComb:
+        diracrow[::step] = 1
+    return diracComb
 
-def comb_sinc(x,lbd):   #renvoie le comb*sinc correspondant à notre modèle
-  Lambda = 1e-3/(600)
-    
-  u=Lambda/(f2*lbd)
-  v=Lambda*2*np.deg2rad(8.616)/(lbd)
-  w=x[0]
-  b=np.abs(w[0]-w[1])   #step (taille 1 pixel ?)
-  c=1/(Lambda/(f2*lbd))     #step entre les pics du comb
-  d=int(np.round(c/b))      #nombre de pixel entre les pics de dirac
-  DiracComb = np.zeros_like(x)
-  for i in DiracComb:
-    i[::d]= 1*np.sinc(u*w[::d] - v)      #array avec valeur des sinc à la position des pics du comb
-  return DiracComb
-
-def U2(x, y, lbd):
-    t1 = rect(x*f1/(a*f2))*rect(y*f1/(b*f2))
-    t3=np.sinc((x*25e-3/(lbd*f2)))
-    t4 = comb_sinc(x,lbd)
-    t7=convolve(t3,t1)
-    return convolve(t7, t4, mode='same')
+def U2(lbd, f1, f2, a):
+    t1 = rect(X*f1/(a*f2))*rect(Y*f1/(b*f2))
+    t2 = comb(X,lbd*f2/Lambda)*np.sinc(Lambda*X/(lbd*f2) - Lambda*beta/(2*np.pi))
+    return convolve(t1, t2, 'same')
 
 def res(x):
     # Trouve le plus grand pic dans le signal
     try:
-        plt.plot(x)
-        plt.show()
         peak, _ = find_peaks(x, height=0.5)
         # mesure la largeur à mi-hauteur pour calculer la résolution
         width = peak_widths(x, peak, rel_height=0.8)[0][0]
@@ -108,10 +109,10 @@ def U2_to_rgb(data, rgb):
                 rgbdata[i,j,k] = data[i,j]*rgb[k]
     return rgbdata
 
-def plot_spectrum(X, Y, wavelengths):
+def get_spectrum(wavelengths, f1, f2, a):
     combined = None
     for i, lbd in enumerate(wavelengths):
-        intensity = U2(X,Y, lbd*1e-9)
+        intensity = U2(lbd*1e-9, f1, f2, a)
         intensity /= np.max(intensity)
         rgb = wavelength_to_rgb(lbd)
         # multiplies intensities by the rgb values of the wavelength
@@ -120,31 +121,35 @@ def plot_spectrum(X, Y, wavelengths):
             combined = rgbdata
         else:
             combined += rgbdata
-
-    plt.imshow(combined)
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.show()
-
+    return combined
+    
 if __name__ == '__main__':
-    # paramètres à définir, d'autres paramètres peuvent intervenir
-    f1 = 50e-3# focale de la 1ere lentille
-    f2 = 20e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
-    a = 2e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
+    # paramètres constants
     beta = np.radians(8.616) # angle de Blaze
     b = 0.02
     Lambda = (1e-3/(600)) # pas du réseau
     pixel_size = 3.45e-6
-    camera_size = (1440, 1080) 
+    camera_size = (1440, 1080) # 1480 x 1080
 
+    # paramètres à faire varier
+    f1 = 50e-3# focale de la 1ere lentille
+    f2 = 10e-3#np.array([20, 25, 30, 40, 50])*1e-3# focale de la 2e lentille
+    a = 1e-4#np.linspace(0.5e-3, 5e-3, 100)# taille de l'ouverture
+
+    # Définition du domaine spatial
     x = np.linspace(-camera_size[0]*pixel_size/2,
                     camera_size[0]*pixel_size/2,
                     camera_size[0])
-
     y = np.linspace(-camera_size[1]*pixel_size/2,
                     camera_size[1]*pixel_size/2,
                     camera_size[1])
     X, Y = np.meshgrid(x, y)
 
-    wavelengths = [600]#np.linspace(400, 700, 15)# longueurs d'ondes
-    plot_spectrum(X, Y, wavelengths)
+    spectrum = get_spectrum(np.linspace(380, 750, 40), f1, f2, a)
+    plt.imshow(spectrum)
+    plt.xlabel('x (pixels)')
+    plt.ylabel('y (pixels)')
+    plt.show()
+
+    #analyse_f2(550, f1, f2, a)
+
