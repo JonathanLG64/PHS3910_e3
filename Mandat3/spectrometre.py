@@ -36,7 +36,11 @@ def avg_pos_res(gray):
     r = np.array(r)
     r[r<20] = np.nan
     px = 5.2e-6
-    return (np.mean(x, axis=0), np.std(x, axis=0) , np.nanmean(r, axis=0)*px, np.nanstd(r, axis=0)*px)
+    pos = np.mean(x, axis=0)
+    dpos = np.std(x, axis=0)*100 / pos
+    res = np.nanmean(r, axis=0)*px
+    dres = np.nanstd(r, axis=0)*100*px / res
+    return (pos, dpos, res, dres)
 
 # interpolation linéaire pour la table optique
 def pos_to_lbd_table(x):
@@ -49,7 +53,7 @@ def pos_to_lbd_table(x):
 img = cv2.imread(r'C:\Users\jonat\Documents\Polymtl\Session7\PHS3910_e3\Mandat3\helium.png')
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-x, dx, r, dr = avg_pos_res(gray)
+x, dx, r, dr = avg_pos_res(gray) # position et resolution avec erreurs relatives
 lbds = pos_to_lbd_table(x)
 
 print(x)
