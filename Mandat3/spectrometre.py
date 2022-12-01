@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks, medfilt
+from scipy.signal import find_peaks, medfilt, peak_widths
 
 def pos_1(row):
     peaks, _ = find_peaks(row, distance=1e4)
@@ -12,23 +12,31 @@ def pos_1(row):
 def avg_position1(img):
     return np.mean([pos_1(row) for row in img if pos_1(row) != -1])
 
-def pos_multi(row):
+def res_pos(row):
     filtrow = medfilt(row, 31)
     peaks, _ = find_peaks(filtrow, prominence=10, distance = 50)
-    return peaks
+    widths = peak_widths(row, peaks, rel_height=0.5)[0]
+    return (peaks, widths)
 
-def avg_position(gray):
+
+def avg_pos_res(gray):
     x = []
+    r = []
     n = 0
     for row in gray:
-        pos = pos_multi(row)
+        pos, res = res_pos(row)
         if len(pos) > n:
             x = [pos]
+            r = [res]
             n = len(pos)
         elif len(pos) == n:
             x.append(pos)
+            r.append(res)
     x = np.array(x)
-    return np.mean(x, axis=0)
+    r = np.array(r)
+    r[r<20] = np.nan
+    px = 5.2e-6
+    return (np.mean(x, axis=0), np.std(x, axis=0) , np.nanmean(r, axis=0)*px, np.nanstd(r, axis=0)*px)
 
 # interpolation linéaire pour la table optique
 def pos_to_lbd_table(x):
@@ -41,9 +49,14 @@ def pos_to_lbd_table(x):
 img = cv2.imread(r'C:\Users\jonat\Documents\Polymtl\Session7\PHS3910_e3\Mandat3\helium.png')
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-x = avg_position(gray)
+x, dx, r, dr = avg_pos_res(gray)
 lbds = pos_to_lbd_table(x)
+
+print(x)
+print(dx)
 print(lbds)
+print(r)
+print(dr)
 
 plt.imshow(gray)
 plt.show()
