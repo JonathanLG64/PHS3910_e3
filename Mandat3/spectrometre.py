@@ -41,15 +41,15 @@ def gaussfitter(row):
                                xdata[roi],
                                row[roi], p0=[127, float(peak), float(width[0][i])/2.355])
         err = np.sqrt(np.diag(pcov))
-        print(f'A = {popt[0]:.3f} ± {err[0]}')
-        print(f'mu = {popt[1]:.3f} ± {err[1]} mm')
-        print(f'sigma = {abs(popt[2])} ± {err[2]} mm')
-        plt.plot(xdata[roi]*px, gaussian(xdata[roi], *popt), '--' ,label=f'fit gaussien {i+1}')
-        plt.plot(xdata[peak]*px, row[peak],'.')
+        print(f'A = {popt[0]} ± {err[0]}')
+        print(f'mu = {popt[1]*px} ± {err[1]*px} mm')
+        print(f'sigma = {abs(popt[2])*px} ± {err[2]*px} mm')
+        plt.plot(lbd_to(xdata[roi]), gaussian(xdata[roi], *popt), '--' ,label=f'fit gaussien {i+1}')
+        plt.plot(lbd_to(xdata[peak]), row[peak],'.')
         pos.append(popt[1])
         errs.append(popt[2])
-    plt.plot(xdata*px, row, '-',label ='signal filtré')
-    plt.xlabel('x (mm)', fontsize = 15)
+    plt.plot(lbd_to(xdata), row, '-',label ='signal filtré')
+    plt.xlabel('λ (nm)', fontsize = 15)
     plt.ylabel('Intensité', fontsize=15)
     plt.legend()
     plt.show()
@@ -79,7 +79,7 @@ def avg_pos_res(gray):
     return (pos, dpos, res, dres)
 
 # interpolation linéaire pour la table optique
-def pos_to_lbd_table(x):
+def lbd_to(x):
     x1 = 139.095
     x2 = 1167.793
     y1 = 405
@@ -92,7 +92,7 @@ gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 x, errors = gaussfitter(gray[int(1080*0.4)])
 
 #x, dx, r, dr = avg_pos_res(gray) # position et resolution avec erreurs relatives
-lbd = pos_to_lbd_table(x)
+lbd = lbd_to(x)
 print(lbd*errors)
 print(f"longueur d'onde: {lbd}")
 #print(f"erreur relative longueur d'onde: {dx}")
