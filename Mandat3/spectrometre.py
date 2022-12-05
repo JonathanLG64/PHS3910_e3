@@ -5,7 +5,7 @@ import matplotlib as mpl
 from scipy.signal import find_peaks, medfilt, peak_widths
 from scipy.optimize import curve_fit
 
-mpl.rcParams['figure.dpi'] = 300
+mpl.rcParams['figure.dpi'] = 150
 
 def pos_1(row):
     peaks, _ = find_peaks(row, distance=1e4)
