@@ -4,97 +4,74 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy.signal import find_peaks, medfilt, peak_widths
 from scipy.optimize import curve_fit
+from sklearn.linear_model import LinearRegression
 
 mpl.rcParams['figure.dpi'] = 150
-
-def pos_1(row):
-    peaks, _ = find_peaks(row, distance=1e4)
-    if list(peaks):
-        return peaks[0]
-    return -1
-    
-def avg_position1(img):
-    return np.mean([pos_1(row) for row in img if pos_1(row) != -1])
+np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 def gaussian(x, A, mu, sigma):
     return A*np.exp(-(x-mu)**2 / (2*sigma**2))
-
-
-def res_pos(row):
-    row = medfilt(row, 31)
-    peaks, _ = find_peaks(row, prominence=10, distance = 50)
-    width = peak_widths(row, peaks, rel_height=0.5)
-    return (peaks, width[0])
 
 def gaussfitter(row):
     row = medfilt(row, 31)
     peaks, _ = find_peaks(row, prominence=10, distance = 50)
     width = peak_widths(row, peaks, rel_height=0.5)
-    print(width)
     pos = []
     errs = []
+    pixels = np.arange(row.size)
+    xdata, err, popt = to_lbd(pixels)
+    xerr = pixels*(popt[0] + err[0]) + err[1] + popt[1] - xdata
+
+    plt.plot(xdata, row, '-',label ='signal filtré', alpha=0.3)
+    plt.errorbar(xdata, row, xerr=xerr, )
+
     for i , peak in enumerate(peaks):
-        px = 5.2e-3
-        xdata = np.arange(row.size)
-        roi = np.logical_and(xdata > width[2][i], xdata < width[3][i])
+        
+        roi = np.logical_and(xdata > to_lbd(width[2][i])[0], xdata < to_lbd(width[3][i])[0])
         popt, pcov = curve_fit(gaussian, 
                                xdata[roi],
-                               row[roi], p0=[127, float(peak), float(width[0][i])/2.355])
+                               row[roi], p0=[127, to_lbd(float(peak))[0], 1])
         err = np.sqrt(np.diag(pcov))
-        print(f'A = {popt[0]} ± {err[0]}')
-        print(f'mu = {popt[1]*px} ± {err[1]*px} mm')
-        print(f'sigma = {abs(popt[2])*px} ± {err[2]*px} mm')
-        plt.plot(lbd_to(xdata[roi]), gaussian(xdata[roi], *popt), '--' ,label=f'fit gaussien {i+1}')
-        plt.plot(lbd_to(xdata[peak]), row[peak],'.')
+
+        print(popt, err)
+        print(f'resolution = {popt[2]/2.355:.3f} +- {err[2]/2.355:.3f} nm')
+
+        plt.plot(xdata[roi], gaussian(xdata[roi], *popt), '--' ,label=f'fit gaussien {i+1}')
+        plt.plot(xdata[peak], row[peak],'.')
         pos.append(popt[1])
         errs.append(popt[2])
-    plt.plot(lbd_to(xdata), row, '-',label ='signal filtré')
+    
     plt.xlabel('λ (nm)', fontsize = 15)
     plt.ylabel('Intensité', fontsize=15)
     plt.legend()
     plt.show()
+
     return (np.array(pos), np.array(errs)/np.array(pos))
 
-def avg_pos_res(gray):
-    x = []
-    r = []
-    n = 0
-    for row in gray:
-        pos, res = res_pos(row)
-        if len(pos) > n:
-            x = [pos]
-            r = [res]
-            n = len(pos)
-        elif len(pos) == n:
-            x.append(pos)
-            r.append(res)
-    x = np.array(x)
-    r = np.array(r)
-    r[r<30] = np.nan
-    px = 5.2e-6
-    pos = np.mean(x, axis=0)
-    dpos = np.std(x, axis=0) / pos
-    res = np.nanmean(r, axis=0)*px
-    dres = np.nanstd(r, axis=0)*px / res
-    return (pos, dpos, res, dres)
+def linear(x, a, b):
+    return a*x + b
+#calibration de l'appareil
+def to_lbd(x):
+    #table optique
+    x_ref = np.array([ 214.46598825, 588.77195384, 954.24376857, 1127.0321855 ])
+    #impression 3D
+    #x_ref = np.array([ 363.55249548,  703.86088748,  874.53796053, 1135.02687714])
 
-# interpolation linéaire pour la table optique
-def lbd_to(x):
-    x1 = 139.095
-    x2 = 1167.793
-    y1 = 405
-    y2 = 650
-    return y1 + (x - x1)*(y2-y1) / (x2-x1)
+    y_ref = np.array([389, 444.4, 497.9, 581.5])
 
+    popt, pcov = curve_fit(linear, x_ref, y_ref, p0=[0.2, 337])
+    err = np.sqrt(np.diag(pcov))
+
+    y = popt[0]*x + popt[1]
+    return (y, err, popt)
+    
 img = cv2.imread(r'C:\Users\jonat\Documents\Polymtl\Session7\PHS3910_e3\Mandat3\helium.png')
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-x, errors = gaussfitter(gray[int(1080*0.4)])
-
+x, errors = gaussfitter(gray[int(1080*0.5)])
 #x, dx, r, dr = avg_pos_res(gray) # position et resolution avec erreurs relatives
-lbd = lbd_to(x)
-print(lbd*errors)
-print(f"longueur d'onde: {lbd}")
+
+print(f"longueur d'onde: {x}")
 #print(f"erreur relative longueur d'onde: {dx}")
 #print(f"résolution (mm): {r*1e3}")
 #print(f"erreur relative résolution: {dr}")
