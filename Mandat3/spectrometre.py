@@ -23,7 +23,6 @@ def gaussfitter(row):
     xerr = pixels*(popt[0] + err[0]) + err[1] + popt[1] - xdata
 
     plt.plot(xdata, row, '-',label ='signal filtré', alpha=0.3)
-    plt.errorbar(xdata, row, xerr=xerr, )
 
     for i , peak in enumerate(peaks):
         
@@ -53,40 +52,28 @@ def linear(x, a, b):
 #calibration de l'appareil
 def to_lbd(x):
     #table optique
-    x_ref = np.array([ 214.46598825, 588.77195384, 954.24376857, 1127.0321855 ])
+    #x_ref = np.array([ 214.46598825, 588.77195384, 954.24376857, 1127.0321855 ])
     #impression 3D
-    #x_ref = np.array([ 363.55249548,  703.86088748,  874.53796053, 1135.02687714])
+    x_ref = np.array([ 363.55249548,  703.86088748,  874.53796053, 1135.02687714])
 
     y_ref = np.array([389, 444.4, 497.9, 581.5])
 
     popt, pcov = curve_fit(linear, x_ref, y_ref, p0=[0.2, 337])
     err = np.sqrt(np.diag(pcov))
-
+    #x1 = np.linspace(0, 1280, 1000)
+    #plt.scatter(x_ref, y_ref, label='points de référence')
+    #plt.plot(x1, linear(x1,*popt), label='droite de calibration')
+    #plt.xlabel('x (pixels)', fontsize=15)
+    #plt.ylabel('λ (nm)', fontsize=15)
+    #plt.legend()
+    #plt.fill_between(x1, linear(x1,*popt) - err[0]*x1 -err[1],linear(x1,*popt) + err[0]*x1 +err[1], alpha=0.3, color='blue')
+    #plt.show()
+    #print(popt)
+    #print(err)
     y = popt[0]*x + popt[1]
     return (y, err, popt)
     
-img = cv2.imread(r'C:\Users\jonat\Documents\Polymtl\Session7\PHS3910_e3\Mandat3\helium.png')
+img = cv2.imread(r'C:\Users\jonat\Documents\Polymtl\Session7\PHS3910_e3\Mandat3\Spectres_cond_reels\helium.png')
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 x, errors = gaussfitter(gray[int(1080*0.5)])
-#x, dx, r, dr = avg_pos_res(gray) # position et resolution avec erreurs relatives
-
-print(f"longueur d'onde: {x}")
-#print(f"erreur relative longueur d'onde: {dx}")
-#print(f"résolution (mm): {r*1e3}")
-#print(f"erreur relative résolution: {dr}")
-
-#lbd =np.array([650, 405])
-#dx = np.array([0.01519033, 0.2960821])
-#r =np.array([0.00018492, 0.00021245])
-#dr =np.array([0.09806197, 0.16599191])
-
-#plt.scatter(lbd, r*1e3)
-#plt.errorbar(lbd, r*1e3, yerr=dr*r*1e3, xerr = lbd*dx, capsize=3, ls='none')
-
-#plt.xlabel('ʎ (nm)', fontsize = 15)
-#plt.ylabel('résolution (mm)', fontsize=15)
-#plt.show()
-
-#plt.imshow(gray)
-#plt.show()
