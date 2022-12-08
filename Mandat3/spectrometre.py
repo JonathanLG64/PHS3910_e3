@@ -11,7 +11,7 @@ np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 def gaussian(x, A, mu, sigma):
     return A*np.exp(-(x-mu)**2 / (2*sigma**2))
-
+# applique des régressions gaussiennes sur tous les pics trouvés dans le signal
 def gaussfitter(row):
     row = medfilt(row, 31)
     peaks, _ = find_peaks(row, prominence=10, distance = 50)
@@ -49,7 +49,7 @@ def gaussfitter(row):
 
 def linear(x, a, b):
     return a*x + b
-#calibration de l'appareil
+#calibration de l'appareil (droite linéaire qui convertit des pixels en nm)
 def to_lbd(x):
     #table optique
     #x_ref = np.array([ 214.46598825, 588.77195384, 954.24376857, 1127.0321855 ])
@@ -66,15 +66,18 @@ def to_lbd(x):
     #plt.xlabel('x (pixels)', fontsize=15)
     #plt.ylabel('λ (nm)', fontsize=15)
     #plt.legend()
-    #plt.fill_between(x1, linear(x1,*popt) - err[0]*x1 -err[1],linear(x1,*popt) + err[0]*x1 +err[1], alpha=0.3, color='blue')
+    #plt.fill_between(x1, linear(x1,*popt) - err[0]*x1 
+    # -err[1],linear(x1,*popt) + err[0]*x1 +err[1], alpha=0.3, color='blue')
     #plt.show()
     #print(popt)
     #print(err)
     y = popt[0]*x + popt[1]
     return (y, err, popt)
     
-#img = cv2.imread(r'C:\Users\jonat\Documents\Polymtl\Session7\PHS3910_e3\Mandat3\Spectres_cond_reels\helium.png')
-img = cv2.imread(r'~/Documents/TrimestreA22/PHS3910/PHS3910_e3/Mandat3/Spectres_cond_reels/helium.png')
+#img = cv2.imread(r'C:\Users\jonat\Documents\Polymtl
+# \Session7\PHS3910_e3\Mandat3\Spectres_cond_reels\helium.png')
+file = r'~/Documents/TrimestreA22/PHS3910/PHS3910_e3/Mandat3/Spectres_cond_reels/helium.png'
+img = cv2.imread(file)
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 x, errors = gaussfitter(gray[int(1080*0.5)])
