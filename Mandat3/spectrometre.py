@@ -73,7 +73,8 @@ def to_lbd(x):
     y = popt[0]*x + popt[1]
     return (y, err, popt)
     
-img = cv2.imread(r'C:\Users\jonat\Documents\Polymtl\Session7\PHS3910_e3\Mandat3\Spectres_cond_reels\helium.png')
+#img = cv2.imread(r'C:\Users\jonat\Documents\Polymtl\Session7\PHS3910_e3\Mandat3\Spectres_cond_reels\helium.png')
+img = cv2.imread(r'~/Documents/TrimestreA22/PHS3910/PHS3910_e3/Mandat3/Spectres_cond_reels/helium.png')
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 x, errors = gaussfitter(gray[int(1080*0.5)])
